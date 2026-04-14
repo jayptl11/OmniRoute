@@ -1,0 +1,12 @@
+﻿<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OmniRoute.API/OmniRoute.API.csproj" />
+    <Project Path="src/OmniRoute.Application/OmniRoute.Application.csproj" />
+    <Project Path="src/OmniRoute.Domain/OmniRoute.Domain.csproj" />
+    <Project Path="src/OmniRoute.Infrastructure/OmniRoute.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OmniRoute.UnitTests/OmniRoute.UnitTests.csproj" />
+  </Folder>
+</Solution>
+
