@@ -25,5 +25,13 @@ public class CurrentUserService : ICurrentUserService
 
         return userId;
     }
+
+    public Guid? TryGetUserId()
+    {
+        var userIdClaim = _httpContextAccessor.HttpContext?.User
+            .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
 }
 

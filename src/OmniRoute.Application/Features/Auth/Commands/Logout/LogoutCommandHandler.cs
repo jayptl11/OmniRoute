@@ -25,7 +25,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
 
     public async Task<Result> Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
-        Guid? userId = _currentUserService.GetUserId();
+        var userId = _currentUserService.TryGetUserId();
 
         if (!userId.HasValue || userId.Value == Guid.Empty)
             return Result.Failure("UNAUTHORIZED", "User not authenticated");
