@@ -13,15 +13,34 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    public string? Role =>
+        _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
+
+    public Guid? TeamId
+    {
+        get
+        {
+            var val = _httpContextAccessor.HttpContext?.User.FindFirst("teamId")?.Value;
+            return Guid.TryParse(val, out var id) ? id : null;
+        }
+    }
+
+    public Guid? StoreId
+    {
+        get
+        {
+            var val = _httpContextAccessor.HttpContext?.User.FindFirst("storeId")?.Value;
+            return Guid.TryParse(val, out var id) ? id : null;
+        }
+    }
+
     public Guid GetUserId()
     {
         var userIdClaim = _httpContextAccessor.HttpContext?.User
             .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
             throw new UnauthorizedAccessException("User is not authenticated");
-        }
 
         return userId;
     }

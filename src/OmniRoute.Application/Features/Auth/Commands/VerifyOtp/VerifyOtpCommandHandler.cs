@@ -1,15 +1,15 @@
 ﻿using OmniRoute.Domain.Enums;
+using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
 using OmniRoute.Domain.Entities;
 using MassTransit;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.VerifyOtp;
 
-public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<VerifyOtpResponse>>
+internal sealed class VerifyOtpCommandHandler : ICommandHandler<VerifyOtpCommand, VerifyOtpResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IOTPCacheService _otpCacheService;
@@ -75,19 +75,17 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
             return Result<VerifyOtpResponse>.Failure("USER_EXISTS", "User already exists");
 
         var defaultRole = await _context.Roles
-            .FirstOrDefaultAsync(r => r.RoleName.Equals("Student"), cancellationToken);
+            .FirstOrDefaultAsync(r => r.RoleName.Equals("TV"), cancellationToken);
 
-        var user = new User
-        {
-            UserId = NewId.NextGuid(),
-            Email = email,
-            Username = username,
-            PasswordHash = passwordHash,
-            FirstName = firstName,
-            LastName = lastName,
-            CreatedAt = DateTime.Now,
-            RoleId = defaultRole?.RoleId
-        };
+        var user = User.Create(
+            NewId.NextGuid(),
+            email,
+            username,
+            passwordHash,
+            firstName,
+            lastName,
+            defaultRole?.RoleId
+        );
 
         await _context.Users.AddAsync(user, cancellationToken);
 
@@ -96,7 +94,7 @@ public class VerifyOtpCommandHandler : IRequestHandler<VerifyOtpCommand, Result<
             ProfileId = NewId.NextGuid(),
             UserId = user.UserId
         };
-
+        user.UserProfile = userProfile;
         await _context.UserProfiles.AddAsync(userProfile, cancellationToken);
         _context.SetAuditUserId(user.UserId);
         await _context.SaveChangesAsync(cancellationToken);

@@ -1,17 +1,15 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
 using OmniRoute.Domain.Entities;
 using MassTransit;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.LoginWithGoogle;
 
-public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleCommand, Result<LoginResponse>>
+internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithGoogleCommand, LoginResponse>
 {
-    private static readonly TimeSpan DefaultDailyReminderTime = new(20, 0, 0);
-
     private readonly IApplicationDbContext _context;
     private readonly IGoogleAuthService _googleAuth;
     private readonly ITokenService _tokenService;
@@ -34,8 +32,10 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
 
         var user = await _context.Users
             .Include(u => u.Role)
-            .Include(u => u.UserProfile)
             .FirstOrDefaultAsync(u => u.Email == googleUser.Email, cancellationToken);
+
+        Guid? resolvedRoleId = null;
+        string? resolvedRoleName = null;
 
         if (user == null)
         {
@@ -43,20 +43,20 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
             var finalUsername = await EnsureUniqueUsernameAsync(username, cancellationToken);
 
             var defaultRole = await _context.Roles
-                .FirstOrDefaultAsync(r => r.RoleName == "Student", cancellationToken);
+                .FirstOrDefaultAsync(r => r.RoleName == "TV", cancellationToken);
 
-            user = new User
-            {
-                UserId = NewId.NextGuid(),
-                Email = googleUser.Email,
-                Username = finalUsername,
-                PasswordHash = string.Empty,
-                FirstName = googleUser.GivenName,
-                LastName = googleUser.FamilyName,
-                CreatedAt = DateTime.UtcNow,
-                Status = "Active",
-                RoleId = defaultRole?.RoleId
-            };
+            resolvedRoleId = defaultRole?.RoleId;
+            resolvedRoleName = defaultRole?.RoleName;
+
+            user = User.Create(
+                NewId.NextGuid(),
+                googleUser.Email,
+                finalUsername,
+                string.Empty,
+                googleUser.GivenName,
+                googleUser.FamilyName,
+                resolvedRoleId
+            );
 
             _context.Users.Add(user);
 
@@ -65,36 +65,22 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
                 ProfileId = NewId.NextGuid(),
                 UserId = user.UserId
             };
-
+            user.UserProfile = userProfile;
             _context.UserProfiles.Add(userProfile);
+
             _context.SetAuditUserId(user.UserId);
             await _context.SaveChangesAsync(cancellationToken);
-
-            user.Role = defaultRole;
-            user.UserProfile = userProfile;
         }
-
-        if (user.Status == "Banned")
-            return Result<LoginResponse>.Failure("USER_BANNED", "Your account has been banned. Please contact support.");
-
-        var isFirstSuccessfulLogin = user.LastLogin == null;
-        var shouldPromptDailyReminderTime = isFirstSuccessfulLogin && user.UserProfile?.DailyReminderTime == null;
-        if (user.UserProfile == null)
+        else
         {
-            user.UserProfile = new UserProfile
-            {
-                ProfileId = NewId.NextGuid(),
-                UserId = user.UserId,
-                DailyReminderTime = DefaultDailyReminderTime
-            };
-            _context.UserProfiles.Add(user.UserProfile);
-        }
-        else if (user.UserProfile.DailyReminderTime == null)
-        {
-            user.UserProfile.DailyReminderTime = DefaultDailyReminderTime;
+            resolvedRoleId = user.RoleId;
+            resolvedRoleName = user.Role?.RoleName;
         }
 
-        user.LastLogin = DateTime.UtcNow;
+        if (!user.IsActive)
+            return Result<LoginResponse>.Failure("ACCOUNT_LOCKED", "Your account has been locked. Please contact support.");
+
+        user.UpdateLastLogin(DateTime.UtcNow);
 
         var accessToken = _tokenService.GenerateAccessToken(user);
 
@@ -118,9 +104,8 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
             user.Email,
             user.Username,
             user.LastLogin,
-            user.RoleId,
-            user.Role?.RoleName,
-            shouldPromptDailyReminderTime
+            resolvedRoleId,
+            resolvedRoleName
         ));
     }
 

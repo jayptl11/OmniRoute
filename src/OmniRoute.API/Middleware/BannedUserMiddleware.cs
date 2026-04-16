@@ -25,14 +25,14 @@ public class BannedUserMiddleware
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.UserId == userId);
 
-                if (user != null && user.Status == "Banned")
+                if (user != null && !user.IsActive)
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsJsonAsync(new
                     {
-                        ErrorCode = "USER_BANNED",
-                        ErrorMessage = "Your account has been banned. Please contact support."
+                        ErrorCode = "ACCOUNT_LOCKED",
+                        ErrorMessage = "Your account has been locked. Please contact support."
                     });
                     return;
                 }

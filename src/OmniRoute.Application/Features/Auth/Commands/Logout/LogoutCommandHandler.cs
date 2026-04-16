@@ -1,13 +1,13 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Entities;
 using MassTransit;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.Logout;
 
-public class LogoutCommandHandler : IRequestHandler<LogoutCommand, Result>
+internal sealed class LogoutCommandHandler : ICommandHandler<LogoutCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;

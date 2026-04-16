@@ -1,12 +1,12 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Enums;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.Register;
 
-public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result>
+internal sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IEmailService _emailService;

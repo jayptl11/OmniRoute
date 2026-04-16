@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using OmniRoute.Application.Common.Interfaces;
+using OmniRoute.Infrastructure.BackgroundServices;
 using OmniRoute.Infrastructure.Persistence;
 using OmniRoute.Infrastructure.Services;
 using OmniRoute.Infrastructure.Settings;
@@ -75,6 +76,7 @@ public static class DependencyInjection
         });
 
         services.AddLogging(builder => builder.AddConsole());
+        services.AddHostedService<TokenBlacklistCleanupService>();
         return services;
     }
 }

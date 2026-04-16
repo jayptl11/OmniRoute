@@ -1,18 +1,18 @@
-﻿﻿using OmniRoute.Application.Common.Interfaces;
+﻿﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Enums;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.ForgotPassword;
 
-public class ForgotPasswordCommanHandler : IRequestHandler<ForgotPasswordCommand, Result>
+internal sealed class ForgotPasswordCommandHandler : ICommandHandler<ForgotPasswordCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly IOTPCacheService _otpCacheService;
     private readonly IEmailService _emailService;
 
-    public ForgotPasswordCommanHandler(
+    public ForgotPasswordCommandHandler(
         IApplicationDbContext context, 
         IOTPCacheService otpCacheService, 
         IEmailService emailService)

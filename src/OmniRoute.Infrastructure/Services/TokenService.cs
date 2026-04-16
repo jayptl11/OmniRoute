@@ -41,6 +41,12 @@ public class TokenService : ITokenService
         if (user.Role != null && !string.IsNullOrWhiteSpace(user.Role.RoleName))
             claims.Add(new Claim(ClaimTypes.Role, user.Role.RoleName));
 
+        if (user.TeamId.HasValue)
+            claims.Add(new Claim("teamId", user.TeamId.Value.ToString()));
+
+        if (user.StoreId.HasValue)
+            claims.Add(new Claim("storeId", user.StoreId.Value.ToString()));
+
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,
             audience: _settings.Audience,

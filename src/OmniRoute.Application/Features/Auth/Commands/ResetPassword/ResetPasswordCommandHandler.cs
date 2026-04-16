@@ -1,11 +1,11 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.ResetPassword;
 
-public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand, Result>
+internal sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordCommand>
 {
     private readonly IApplicationDbContext _context;
     private readonly ITokenService _tokenService;
@@ -33,7 +33,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
         if (user == null)
             return Result.Failure("USER_NOT_FOUND", "User not found.");
 
-        user.PasswordHash = _otpService.HashPassword(request.NewPassword);
+        user.UpdatePassword(_otpService.HashPassword(request.NewPassword));
 
         _context.SetAuditUserId(user.UserId);
         await _context.SaveChangesAsync(cancellationToken);

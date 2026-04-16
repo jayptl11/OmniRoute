@@ -1,10 +1,10 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
-using MediatR;
 
 namespace OmniRoute.Application.Features.Auth.Commands.ResendOtp;
 
-public class ResendOtpCommandHandler : IRequestHandler<ResendOtpCommand, Result>
+internal sealed class ResendOtpCommandHandler : ICommandHandler<ResendOtpCommand>
 {
     private readonly IEmailService _emailService;
     private readonly IOTPCacheService _otpCacheService;

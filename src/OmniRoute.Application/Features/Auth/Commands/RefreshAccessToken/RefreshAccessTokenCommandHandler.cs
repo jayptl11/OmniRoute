@@ -1,14 +1,14 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+﻿using OmniRoute.Application.Common.Abstractions;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
 using OmniRoute.Domain.Entities;
 using MassTransit;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.RefreshAccessToken;
 
-public class RefreshAccessTokenCommandHandler : IRequestHandler<RefreshAccessTokenCommand, Result<LoginResponse>>
+internal sealed class RefreshAccessTokenCommandHandler : ICommandHandler<RefreshAccessTokenCommand, LoginResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly ITokenService _tokenService;
@@ -82,8 +82,7 @@ public class RefreshAccessTokenCommandHandler : IRequestHandler<RefreshAccessTok
             user.Username,
             user.LastLogin,
             user.RoleId,
-            user.Role?.RoleName,
-            false
+            user.Role?.RoleName
         ));
     }
 }

@@ -1,5 +1,4 @@
-﻿using OmniRoute.Application.Common.Models;
-using MediatR;
+﻿using OmniRoute.Application.Common.Abstractions;
 
 namespace OmniRoute.Application.Features.Auth.Commands.Register;
 
@@ -9,5 +8,5 @@ public record RegisterCommand(
     string FirstName,
     string LastName,
     string Password
-) : IRequest<Result>;
+) : ICommand;
 
