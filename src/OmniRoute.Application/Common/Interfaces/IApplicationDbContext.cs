@@ -11,6 +11,15 @@ namespace OmniRoute.Application.Common.Interfaces
         DbSet<RefreshToken> RefreshTokens { get; }
         DbSet<TokenBlacklist> TokenBlacklist { get; }
 
+        // Lead management
+        DbSet<Lead> Leads { get; }
+        DbSet<Store> Stores { get; }
+        DbSet<Team> Teams { get; }
+        DbSet<RoutingRule> RoutingRules { get; }
+        DbSet<ActivityLog> ActivityLogs { get; }
+        DbSet<SlaConfig> SlaConfigs { get; }
+        DbSet<Notification> Notifications { get; }
+
         void SetAuditUserId(Guid userId);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }

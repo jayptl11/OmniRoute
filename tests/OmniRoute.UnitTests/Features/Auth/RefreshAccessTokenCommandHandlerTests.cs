@@ -44,7 +44,7 @@ public class RefreshAccessTokenCommandHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var user = new User { UserId = userId, Email = "test@test.com", Username = "test" };
+        var user = User.Create(userId, "test@test.com", "test", "");
 
         var revokedToken = new RefreshToken
         {
@@ -86,7 +86,7 @@ public class RefreshAccessTokenCommandHandlerTests
     public async Task Handle_WhenRefreshTokenExpired_ReturnsFailure()
     {
         // Arrange
-        var user = new User { UserId = Guid.NewGuid(), Email = "test@test.com", Username = "test" };
+        var user = User.Create(Guid.NewGuid(), "test@test.com", "test", "");
 
         var expiredToken = new RefreshToken
         {
@@ -115,14 +115,8 @@ public class RefreshAccessTokenCommandHandlerTests
     {
         // Arrange
         var role = new Role { RoleId = Guid.NewGuid(), RoleName = "Student" };
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@test.com",
-            Username = "test",
-            RoleId = role.RoleId,
-            Role = role
-        };
+        var user = User.Create(Guid.NewGuid(), "test@test.com", "test", "", roleId: role.RoleId);
+        user.Role = role;
 
         var validToken = new RefreshToken
         {
@@ -170,7 +164,7 @@ public class RefreshAccessTokenCommandHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
         var otherUserId = Guid.NewGuid();
-        var user = new User { UserId = userId, Email = "test@test.com", Username = "test" };
+        var user = User.Create(userId, "test@test.com", "test", "");
 
         var revokedToken = new RefreshToken
         {

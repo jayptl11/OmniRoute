@@ -47,7 +47,7 @@ public class LoginCommandHandlerTests
     public async Task Handle_WhenPasswordInvalid_ReturnsFailure()
     {
         // Arrange
-        var user = new User { UserId = Guid.NewGuid(), Email = "test@test.com", Username = "test", PasswordHash = "hash" };
+        var user = User.Create(Guid.NewGuid(), "test@test.com", "test", "hash");
         SetupUsersDbSet(new List<User> { user });
         SetupTokenBlacklistDbSet(new List<TokenBlacklist>());
         _passwordServiceMock.Setup(x => x.VerifyPassword("Password123", "hash")).Returns(false);
@@ -66,18 +66,7 @@ public class LoginCommandHandlerTests
     public async Task Handle_WhenValidCredentials_ReturnsAccessToken()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@test.com",
-            Username = "test",
-            PasswordHash = "hash",
-            UserProfile = new UserProfile
-            {
-                ProfileId = Guid.NewGuid(),
-                DailyReminderTime = new TimeSpan(21, 0, 0)
-            }
-        };
+        var user = User.Create(Guid.NewGuid(), "test@test.com", "test", "hash");
         SetupUsersDbSet(new List<User> { user });
         SetupTokenBlacklistDbSet(new List<TokenBlacklist>());
 
@@ -102,47 +91,10 @@ public class LoginCommandHandlerTests
         result.Value.UserId.Should().Be(user.UserId);
         result.Value.Email.Should().Be(user.Email);
         result.Value.Username.Should().Be(user.Username);
-        result.Value.ShouldPromptDailyReminderTime.Should().BeFalse();
 
         refreshTokens.Should().HaveCount(1);
         refreshTokens[0].UserId.Should().Be(user.UserId);
         refreshTokens[0].Token.Should().Be("rt");
-    }
-
-    [Fact]
-    public async Task Handle_FirstSuccessfulLoginAndMissingReminder_ShouldSetPromptFlagTrue()
-    {
-        // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "first@test.com",
-            Username = "first",
-            PasswordHash = "hash",
-            LastLogin = null,
-            UserProfile = new UserProfile
-            {
-                ProfileId = Guid.NewGuid(),
-                DailyReminderTime = null
-            }
-        };
-
-        SetupUsersDbSet(new List<User> { user });
-        SetupTokenBlacklistDbSet(new List<TokenBlacklist>());
-        var refreshTokens = new List<RefreshToken>();
-        SetupRefreshTokensDbSet(refreshTokens);
-
-        _passwordServiceMock.Setup(x => x.VerifyPassword("Password123", "hash")).Returns(true);
-        _tokenServiceMock.Setup(x => x.GenerateAccessToken(It.IsAny<User>())).Returns("jwt");
-        _tokenServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("rt");
-        _contextMock.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        // Act
-        var result = await _handler.Handle(new LoginCommand("first", "Password123"), CancellationToken.None);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.ShouldPromptDailyReminderTime.Should().BeTrue();
     }
 
     private void SetupUsersDbSet(List<User> users)

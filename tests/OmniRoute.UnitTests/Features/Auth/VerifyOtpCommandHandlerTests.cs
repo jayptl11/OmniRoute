@@ -95,7 +95,7 @@ public class VerifyOtpCommandHandlerTests
         // Arrange
         var command = new VerifyOtpCommand("test@test.com", "123456");
         var registrationData = "testuser|hashedPassword|John|Doe";
-        var existingUser = new User { Email = "test@test.com", Username = "testuser" };
+        var existingUser = User.Create(Guid.NewGuid(), "test@test.com", "testuser", "");
         
         _otpCacheServiceMock.Setup(x => x.VerifyOtpAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<(string, OtpPurpose)>.Success((registrationData, OtpPurpose.Register)));

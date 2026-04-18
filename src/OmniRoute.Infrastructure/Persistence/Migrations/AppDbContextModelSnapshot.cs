@@ -22,6 +22,209 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("OmniRoute.Domain.Entities.ActivityLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("NewValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OldValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("PerformedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("PerformedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PerformedAt");
+
+                    b.HasIndex("PerformedBy");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.ToTable("ActivityLogs", (string)null);
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Lead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedGroup")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("AssignedStoreId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssignedUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CustomerAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CustomerEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CustomerPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("LeadCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("NeedDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NeedType")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("PriorityLevel")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("PriorityScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductInterest")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RoutingType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime?>("SlaDeadline")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("SlaViolated")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedStoreId");
+
+                    b.HasIndex("AssignedUserId");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("CustomerPhone");
+
+                    b.HasIndex("LeadCode")
+                        .IsUnique();
+
+                    b.ToTable("Leads", (string)null);
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "IsRead");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("OmniRoute.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("TokenId")
@@ -106,6 +309,266 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
                             RoleId = new Guid("88888888-8888-8888-8888-888888888888"),
                             RoleName = "BQL"
                         });
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.RoutingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionGroup")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("ActionTeamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConditionChannelJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConditionKeywordsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("PriorityOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RuleName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionTeamId");
+
+                    b.HasIndex("PriorityOrder")
+                        .IsUnique();
+
+                    b.ToTable("RoutingRules", (string)null);
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.SlaConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssignedGroup")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("MaxHours")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PriorityLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int>("WarningBeforeHours")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedGroup", "PriorityLevel")
+                        .IsUnique();
+
+                    b.ToTable("SlaConfigs", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000001"),
+                            AssignedGroup = "Sale",
+                            IsActive = true,
+                            MaxHours = 2,
+                            PriorityLevel = "High",
+                            WarningBeforeHours = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000002"),
+                            AssignedGroup = "Sale",
+                            IsActive = true,
+                            MaxHours = 4,
+                            PriorityLevel = "Medium",
+                            WarningBeforeHours = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000003"),
+                            AssignedGroup = "Sale",
+                            IsActive = true,
+                            MaxHours = 8,
+                            PriorityLevel = "Low",
+                            WarningBeforeHours = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000004"),
+                            AssignedGroup = "Cskh",
+                            IsActive = true,
+                            MaxHours = 1,
+                            PriorityLevel = "High",
+                            WarningBeforeHours = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000005"),
+                            AssignedGroup = "Cskh",
+                            IsActive = true,
+                            MaxHours = 4,
+                            PriorityLevel = "Medium",
+                            WarningBeforeHours = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000006"),
+                            AssignedGroup = "Cskh",
+                            IsActive = true,
+                            MaxHours = 24,
+                            PriorityLevel = "Low",
+                            WarningBeforeHours = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000007"),
+                            AssignedGroup = "StoreSupport",
+                            IsActive = true,
+                            MaxHours = 4,
+                            PriorityLevel = "High",
+                            WarningBeforeHours = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000008"),
+                            AssignedGroup = "StoreSupport",
+                            IsActive = true,
+                            MaxHours = 8,
+                            PriorityLevel = "Medium",
+                            WarningBeforeHours = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1000001-0000-0000-0000-000000000009"),
+                            AssignedGroup = "StoreSupport",
+                            IsActive = true,
+                            MaxHours = 24,
+                            PriorityLevel = "Low",
+                            WarningBeforeHours = 4
+                        });
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Store", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MaxCapacity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(20);
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("StoreCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StoreName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("StoreCode")
+                        .IsUnique();
+
+                    b.ToTable("Stores", (string)null);
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Team", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid?>("LeaderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StoreId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TeamName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TeamType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaderId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("Teams", (string)null);
                 });
 
             modelBuilder.Entity("OmniRoute.Domain.Entities.TokenBlacklist", b =>
@@ -210,9 +673,6 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
                     b.Property<string>("Bio")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<TimeSpan?>("DailyReminderTime")
-                        .HasColumnType("time");
-
                     b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("datetime2");
 
@@ -233,6 +693,52 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
                     b.ToTable("UserProfiles");
                 });
 
+            modelBuilder.Entity("OmniRoute.Domain.Entities.ActivityLog", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.User", "PerformedByUser")
+                        .WithMany()
+                        .HasForeignKey("PerformedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PerformedByUser");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Lead", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.Store", "AssignedStore")
+                        .WithMany("Leads")
+                        .HasForeignKey("AssignedStoreId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OmniRoute.Domain.Entities.User", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("OmniRoute.Domain.Entities.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AssignedStore");
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("OmniRoute.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("OmniRoute.Domain.Entities.User", "User")
@@ -242,6 +748,43 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.RoutingRule", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.Team", "ActionTeam")
+                        .WithMany()
+                        .HasForeignKey("ActionTeamId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ActionTeam");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Store", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.User", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Team", b =>
+                {
+                    b.HasOne("OmniRoute.Domain.Entities.User", "Leader")
+                        .WithMany()
+                        .HasForeignKey("LeaderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("OmniRoute.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Leader");
+
+                    b.Navigation("Store");
                 });
 
             modelBuilder.Entity("OmniRoute.Domain.Entities.User", b =>
@@ -268,6 +811,11 @@ namespace OmniRoute.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("OmniRoute.Domain.Entities.Role", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("OmniRoute.Domain.Entities.Store", b =>
+                {
+                    b.Navigation("Leads");
                 });
 
             modelBuilder.Entity("OmniRoute.Domain.Entities.User", b =>

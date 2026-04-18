@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="OmniRoute.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\OmniRoute.Domain\OmniRoute.Domain.csproj" />
   </ItemGroup>
 

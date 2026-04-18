@@ -15,14 +15,14 @@ public class ForgotPasswordCommandHandlerTests
     private readonly Mock<IApplicationDbContext> _contextMock;
     private readonly Mock<IOTPCacheService> _otpCacheServiceMock;
     private readonly Mock<IEmailService> _emailServiceMock;
-    private readonly ForgotPasswordCommanHandler _handler;
+    private readonly ForgotPasswordCommandHandler _handler;
 
     public ForgotPasswordCommandHandlerTests()
     {
         _contextMock = new Mock<IApplicationDbContext>();
         _otpCacheServiceMock = new Mock<IOTPCacheService>();
         _emailServiceMock = new Mock<IEmailService>();
-        _handler = new ForgotPasswordCommanHandler(_contextMock.Object, _otpCacheServiceMock.Object, _emailServiceMock.Object);
+        _handler = new ForgotPasswordCommandHandler(_contextMock.Object, _otpCacheServiceMock.Object, _emailServiceMock.Object);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class ForgotPasswordCommandHandlerTests
     {
         // Arrange
         var command = new ForgotPasswordCommand("test@test.com");
-        var users = new List<User> { new() { Email = "test@test.com", Username = "testuser" } };
+        var users = new List<User> { User.Create(Guid.NewGuid(), "test@test.com", "testuser", "") };
         SetupUsersDbSet(users);
         
         _otpCacheServiceMock.Setup(x => x.GenerateAndStoreOtpAsync(
@@ -53,7 +53,7 @@ public class ForgotPasswordCommandHandlerTests
     {
         // Arrange
         var command = new ForgotPasswordCommand("test@test.com");
-        var users = new List<User> { new() { Email = "test@test.com", Username = "testuser" } };
+        var users = new List<User> { User.Create(Guid.NewGuid(), "test@test.com", "testuser", "") };
         SetupUsersDbSet(users);
         
         _otpCacheServiceMock.Setup(x => x.GenerateAndStoreOtpAsync(

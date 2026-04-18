@@ -1,7 +1,9 @@
 ﻿using System.Text;
 using OmniRoute.Application.Common.Interfaces;
+using OmniRoute.Domain.Interfaces;
 using OmniRoute.Infrastructure.BackgroundServices;
 using OmniRoute.Infrastructure.Persistence;
+using OmniRoute.Infrastructure.Repositories;
 using OmniRoute.Infrastructure.Services;
 using OmniRoute.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -38,6 +40,18 @@ public static class DependencyInjection
         services.AddScoped<IGoogleAuthService, GoogleAuthService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddHttpContextAccessor();
+
+        // Lead management repositories
+        services.AddScoped<ILeadRepository, LeadRepository>();
+        services.AddScoped<IStoreRepository, StoreRepository>();
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<IRoutingRuleRepository, RoutingRuleRepository>();
+        services.AddScoped<ISlaConfigRepository, SlaConfigRepository>();
+        services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+
+        // Routing engine
+        services.AddScoped<IRoutingEngine, RoutingEngine>();
 
         var redisConnectionString = configuration["Redis:ConnectionString"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>

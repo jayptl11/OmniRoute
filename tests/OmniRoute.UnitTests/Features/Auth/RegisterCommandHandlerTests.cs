@@ -32,7 +32,7 @@ public class RegisterCommandHandlerTests
     {
         // Arrange
         var command = new RegisterCommand("existing@test.com", "newuser", "John", "Doe", "Password123");
-        var users = new List<User> { new() { Email = "existing@test.com", Username = "existinguser" } };
+        var users = new List<User> { User.Create(Guid.NewGuid(), "existing@test.com", "existinguser", "") };
         SetupUsersDbSet(users);
 
         // Act
@@ -48,7 +48,7 @@ public class RegisterCommandHandlerTests
     {
         // Arrange
         var command = new RegisterCommand("new@test.com", "existinguser", "John", "Doe", "Password123");
-        var users = new List<User> { new() { Email = "other@test.com", Username = "existinguser" } };
+        var users = new List<User> { User.Create(Guid.NewGuid(), "other@test.com", "existinguser", "") };
         SetupUsersDbSet(users);
 
         // Act

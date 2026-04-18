@@ -49,18 +49,7 @@ public class LoginWithGoogleCommandHandlerTests
     public async Task Handle_WhenUserExists_ReturnsAccessToken()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "user@gmail.com",
-            Username = "user",
-            LastLogin = DateTime.UtcNow.AddDays(-1),
-            UserProfile = new UserProfile
-            {
-                ProfileId = Guid.NewGuid(),
-                DailyReminderTime = new TimeSpan(21, 0, 0)
-            }
-        };
+        var user = User.Create(Guid.NewGuid(), "user@gmail.com", "user", "");
         SetupUsersDbSet(new List<User> { user });
 
         var refreshTokens = new List<RefreshToken>();
@@ -84,7 +73,6 @@ public class LoginWithGoogleCommandHandlerTests
         result.Value.RefreshToken.Should().Be("rt");
         result.Value.Email.Should().Be(user.Email);
         result.Value.Username.Should().Be(user.Username);
-        result.Value.ShouldPromptDailyReminderTime.Should().BeFalse();
 
         refreshTokens.Should().HaveCount(1);
         refreshTokens[0].UserId.Should().Be(user.UserId);
@@ -129,7 +117,6 @@ public class LoginWithGoogleCommandHandlerTests
         result.Value.AccessToken.Should().Be("jwt");
         result.Value.RefreshToken.Should().Be("rt");
         result.Value.RoleName.Should().Be("Student");
-        result.Value.ShouldPromptDailyReminderTime.Should().BeTrue();
 
         userProfiles.Should().HaveCount(1);
         userProfiles[0].UserId.Should().Be(users[0].UserId);

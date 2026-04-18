@@ -21,6 +21,15 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<TokenBlacklist> TokenBlacklist => Set<TokenBlacklist>();
 
+    // Lead management
+    public DbSet<Lead> Leads => Set<Lead>();
+    public DbSet<Store> Stores => Set<Store>();
+    public DbSet<Team> Teams => Set<Team>();
+    public DbSet<RoutingRule> RoutingRules => Set<RoutingRule>();
+    public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
+    public DbSet<SlaConfig> SlaConfigs => Set<SlaConfig>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     public void SetAuditUserId(Guid userId)
     {
         _manualUserId = userId;
@@ -93,6 +102,9 @@ public class AppDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.TokenId).IsRequired();
             entity.HasIndex(x => x.TokenId).IsUnique();
         });
+
+        // Apply all IEntityTypeConfiguration classes in this assembly (new entities)
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
 

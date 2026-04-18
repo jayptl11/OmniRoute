@@ -51,6 +51,13 @@ public class User
 
     public void Deactivate() => IsActive = false;
 
+    public void UpdateDetails(string? firstName, string? lastName, string email)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        Email = email;
+    }
+
     public void AssignRole(Guid? roleId) => RoleId = roleId;
 
     public void AssignToTeam(Guid? teamId) => TeamId = teamId;

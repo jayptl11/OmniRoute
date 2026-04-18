@@ -35,13 +35,7 @@ public class TokenServiceExtractTokenInfoTests
     public void GenerateAccessToken_ShouldIncludeJtiClaim()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         // Act
         var token = _tokenService.GenerateAccessToken(user);
@@ -64,15 +58,8 @@ public class TokenServiceExtractTokenInfoTests
         // Arrange
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
-        var user = new User
-        {
-            UserId = userId,
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword",
-            RoleId = roleId,
-            Role = new Role { RoleId = roleId, RoleName = "Admin" }
-        };
+        var user = User.Create(userId, "test@example.com", "testuser", "hashedpassword", roleId: roleId);
+        user.Role = new Role { RoleId = roleId, RoleName = "Admin" };
 
         // Act
         var token = _tokenService.GenerateAccessToken(user);
@@ -94,13 +81,7 @@ public class TokenServiceExtractTokenInfoTests
     public void ExtractTokenInfo_WithValidToken_ReturnsTokenIdAndExpiresAt()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         var token = _tokenService.GenerateAccessToken(user);
 
@@ -190,13 +171,7 @@ public class TokenServiceExtractTokenInfoTests
     public void GenerateAccessToken_MultipleTimes_GeneratesUniqueJti()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         // Act
         var token1 = _tokenService.GenerateAccessToken(user);
@@ -215,13 +190,7 @@ public class TokenServiceExtractTokenInfoTests
     public void ExtractTokenInfo_ExtractedJtiMatchesOriginal()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         var token = _tokenService.GenerateAccessToken(user);
 
@@ -240,13 +209,7 @@ public class TokenServiceExtractTokenInfoTests
     public void ExtractTokenInfo_ExpiresAtMatchesTokenExpiration()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         var token = _tokenService.GenerateAccessToken(user);
 
@@ -265,13 +228,7 @@ public class TokenServiceExtractTokenInfoTests
     public void GenerateAccessToken_TokenExpirationShouldMatchConfiguration()
     {
         // Arrange
-        var user = new User
-        {
-            UserId = Guid.NewGuid(),
-            Email = "test@example.com",
-            Username = "testuser",
-            PasswordHash = "hashedpassword"
-        };
+        var user = User.Create(Guid.NewGuid(), "test@example.com", "testuser", "hashedpassword");
 
         var beforeGeneration = DateTime.UtcNow;
 

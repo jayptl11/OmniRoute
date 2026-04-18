@@ -316,4 +316,117 @@ public class EmailService : IEmailService
     </td>
 </tr>";
 	}
+
+	// -------------------------------------------------------------------------
+	// WELCOME EMAIL
+	// -------------------------------------------------------------------------
+
+	public async Task SendWelcomeEmailAsync(string email, string username, string tempPassword, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			using var smtpClient = CreateSmtpClient();
+
+			var mailMessage = new MailMessage
+			{
+				From = new MailAddress(_settings.SenderEmail, _settings.SenderName),
+				Subject = "OmniRoute - Tài khoản của bạn đã được tạo",
+				Body = GetWelcomeEmailTemplate(username, tempPassword),
+				IsBodyHtml = true
+			};
+			mailMessage.To.Add(email);
+
+			await smtpClient.SendMailAsync(mailMessage, cancellationToken);
+			_logger.LogInformation("Welcome email sent successfully to {Email}", email);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Failed to send welcome email to {Email}", email);
+			throw;
+		}
+	}
+
+	private static string GetWelcomeEmailTemplate(string username, string tempPassword)
+	{
+		var safeUsername = WebUtility.HtmlEncode(username);
+		var safeTempPassword = WebUtility.HtmlEncode(tempPassword);
+
+		return $@"<!DOCTYPE html>
+<html lang=""vi"">
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Tài khoản OmniRoute</title>
+</head>
+<body style=""margin:0;padding:0;background-color:#E6F1FB;font-family:'Courier New',Courier,monospace;"">
+    <table role=""presentation"" style=""width:100%;border-collapse:collapse;"">
+        <tr>
+            <td align=""center"" style=""padding:36px 16px;"">
+                <table role=""presentation"" style=""width:100%;max-width:600px;border-collapse:collapse;background:#ffffff;border:1.5px solid #0969da;"">
+                    <tr>
+                        <td style=""background:#ffffff;padding:0 28px;border-bottom:1.5px solid #0969da;"">
+                            <table role=""presentation"" style=""width:100%;border-collapse:collapse;"">
+                                <tr>
+                                    <td style=""padding:18px 0;"">{GetBrandLogoHtml()}</td>
+                                    <td align=""right"" style=""padding:0;"">
+                                        <div style=""background:#0969da;padding:0 18px;display:inline-block;"">
+                                            <span style=""font-size:10px;letter-spacing:2px;color:#ffffff;text-transform:uppercase;white-space:nowrap;line-height:60px;display:inline-block;"">ACC // WELCOME</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""background:#E6F1FB;border-bottom:1px solid #B5D4F4;padding:7px 28px;"">
+                            <table role=""presentation"" style=""width:100%;border-collapse:collapse;"">
+                                <tr>
+                                    <td style=""font-size:10px;letter-spacing:1px;color:#185FA5;text-transform:uppercase;"">noreply@OmniRoute.app</td>
+                                    <td align=""right"" style=""font-size:10px;letter-spacing:1px;color:#378ADD;text-transform:uppercase;"">Type: Account</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style=""padding:32px 28px 28px;"">
+                            <p style=""margin:0 0 6px 0;font-size:10px;letter-spacing:2px;color:#378ADD;text-transform:uppercase;"">— Chào mừng</p>
+                            <h2 style=""margin:0 0 20px 0;font-size:24px;font-weight:700;color:#24292f;line-height:1.2;"">Tài khoản đã được tạo</h2>
+                            <p style=""margin:0 0 24px 0;color:#444444;font-size:13px;line-height:1.8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"">
+                                Xin chào <strong>{safeUsername}</strong>, tài khoản OmniRoute của bạn đã được quản trị viên tạo.
+                                Vui lòng đăng nhập với thông tin bên dưới và đổi mật khẩu ngay sau lần đăng nhập đầu tiên.
+                            </p>
+                            <table role=""presentation"" style=""width:100%;border-collapse:collapse;margin:0 0 24px 0;"">
+                                <tr>
+                                    <td style=""border:1.5px solid #0969da;"">
+                                        <table role=""presentation"" style=""width:100%;border-collapse:collapse;"">
+                                            <tr>
+                                                <td style=""background:#0969da;padding:8px 20px;"">
+                                                    <span style=""font-size:10px;letter-spacing:2px;color:#ffffff;text-transform:uppercase;"">Thông tin đăng nhập</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style=""padding:16px 20px;"">
+                                                    <p style=""margin:0 0 8px 0;font-size:12px;color:#666;"">Tên đăng nhập</p>
+                                                    <p style=""margin:0 0 16px 0;font-size:18px;font-weight:700;color:#24292f;letter-spacing:2px;"">{safeUsername}</p>
+                                                    <p style=""margin:0 0 8px 0;font-size:12px;color:#666;"">Mật khẩu tạm thời</p>
+                                                    <p style=""margin:0;font-size:18px;font-weight:700;color:#0969da;letter-spacing:2px;font-family:'Courier New',Courier,monospace;"">{safeTempPassword}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style=""margin:0;color:#888;font-size:12px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"">
+                                Nếu bạn không mong đợi email này, vui lòng liên hệ quản trị viên ngay lập tức.
+                            </p>
+                        </td>
+                    </tr>
+                    {GetCommonFooterHtml()}
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>";
+	}
 }

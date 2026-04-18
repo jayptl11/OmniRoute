@@ -60,7 +60,7 @@ public class ResetPasswordCommandHandlerTests
     {
         // Arrange
         var command = new ResetPasswordCommand("validToken", "NewPassword123");
-        var user = new User { Email = "test@test.com", Username = "testuser", PasswordHash = "oldHash" };
+        var user = User.Create(Guid.NewGuid(), "test@test.com", "testuser", "oldHash");
         _tokenServiceMock.Setup(x => x.ValidateResetPasswordToken("validToken")).Returns("test@test.com");
         _otpServiceMock.Setup(x => x.HashPassword("NewPassword123")).Returns("newHashedPassword");
         SetupUsersDbSet(new List<User> { user });
