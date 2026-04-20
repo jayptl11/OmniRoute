@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniRoute.Application.Common.Models;
+using OmniRoute.Application.Features.Users.Commands.AdminSendResetLink;
+using OmniRoute.Application.Features.Users.Commands.AdminSetTemporaryPassword;
 using OmniRoute.Application.Features.Users.Commands.CreateUser;
 using OmniRoute.Application.Features.Users.Commands.ToggleUserStatus;
 using OmniRoute.Application.Features.Users.Commands.UpdateUser;
@@ -96,6 +98,44 @@ public sealed class UsersController : ControllerBase
         }
         return Ok(result.Value);
     }
+
+    /// <summary>QT-05 — Gửi link đặt lại mật khẩu cho người dùng qua email</summary>
+    [HttpPost("{id:guid}/send-reset-link")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SendResetLink(Guid id, CancellationToken ct)
+    {
+        var result = await _sender.Send(new AdminSendResetLinkCommand(id), ct);
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "USER_NOT_FOUND")
+                return NotFound(new { result.ErrorCode, result.ErrorMessage });
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        }
+        return NoContent();
+    }
+
+    /// <summary>QT-05 — Đặt mật khẩu tạm thời cho người dùng (buộc đổi lần đăng nhập tiếp)</summary>
+    [HttpPost("{id:guid}/set-temporary-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetTemporaryPassword(
+        Guid id,
+        [FromBody] SetTemporaryPasswordRequest request,
+        CancellationToken ct)
+    {
+        var result = await _sender.Send(new AdminSetTemporaryPasswordCommand(id, request.TemporaryPassword), ct);
+        if (!result.IsSuccess)
+        {
+            if (result.ErrorCode == "USER_NOT_FOUND")
+                return NotFound(new { result.ErrorCode, result.ErrorMessage });
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        }
+        return NoContent();
+    }
 }
 
 public record ToggleStatusRequest(bool IsActive);
+public record SetTemporaryPasswordRequest(string TemporaryPassword);

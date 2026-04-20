@@ -19,6 +19,7 @@ namespace OmniRoute.Application.Common.Interfaces
         DbSet<ActivityLog> ActivityLogs { get; }
         DbSet<SlaConfig> SlaConfigs { get; }
         DbSet<Notification> Notifications { get; }
+        DbSet<MasterDataItem> MasterDataItems { get; }
 
         void SetAuditUserId(Guid userId);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -19,4 +19,29 @@ internal sealed class TeamRepository : ITeamRepository
         => await _context.Teams
             .Where(x => x.IsActive && x.TeamType == teamType)
             .ToListAsync(ct);
+
+    public async Task<List<Team>> GetAllAsync(
+        AssignedGroup? teamType = null,
+        Guid? storeId = null,
+        bool? isActive = null,
+        CancellationToken ct = default)
+    {
+        var query = _context.Teams.AsQueryable();
+        if (teamType.HasValue)
+            query = query.Where(x => x.TeamType == teamType.Value);
+        if (storeId.HasValue)
+            query = query.Where(x => x.StoreId == storeId.Value);
+        if (isActive.HasValue)
+            query = query.Where(x => x.IsActive == isActive.Value);
+        return await query.OrderBy(x => x.TeamName).ToListAsync(ct);
+    }
+
+    public async Task AddAsync(Team team, CancellationToken ct = default)
+        => await _context.Teams.AddAsync(team, ct);
+
+    public Task UpdateAsync(Team team, CancellationToken ct = default)
+    {
+        _context.Teams.Update(team);
+        return Task.CompletedTask;
+    }
 }

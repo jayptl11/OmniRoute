@@ -15,4 +15,19 @@ internal sealed class SlaConfigRepository : ISlaConfigRepository
     public async Task<SlaConfig?> GetByGroupAndPriorityAsync(AssignedGroup group, PriorityLevel priority, CancellationToken ct = default)
         => await _context.SlaConfigs
             .FirstOrDefaultAsync(x => x.IsActive && x.AssignedGroup == group && x.PriorityLevel == priority, ct);
+
+    public async Task<List<SlaConfig>> GetAllAsync(CancellationToken ct = default)
+        => await _context.SlaConfigs
+            .OrderBy(x => x.AssignedGroup)
+            .ThenBy(x => x.PriorityLevel)
+            .ToListAsync(ct);
+
+    public async Task<SlaConfig?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => await _context.SlaConfigs.FindAsync([id], ct);
+
+    public Task UpdateAsync(SlaConfig slaConfig, CancellationToken ct = default)
+    {
+        _context.SlaConfigs.Update(slaConfig);
+        return Task.CompletedTask;
+    }
 }

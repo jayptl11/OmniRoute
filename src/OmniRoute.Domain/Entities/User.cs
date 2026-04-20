@@ -11,6 +11,7 @@ public class User
     public DateTime CreatedAt { get; private set; }
     public DateTime? LastLogin { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public bool ForcePasswordChange { get; private set; }
     public int CurrentWorkload { get; private set; }
     public Guid? RoleId { get; private set; }
     public Guid? TeamId { get; private set; }
@@ -46,6 +47,14 @@ public class User
     public void UpdateLastLogin(DateTime timestamp) => LastLogin = timestamp;
 
     public void UpdatePassword(string passwordHash) => PasswordHash = passwordHash;
+
+    public void SetTemporaryPassword(string passwordHash)
+    {
+        PasswordHash = passwordHash;
+        ForcePasswordChange = true;
+    }
+
+    public void ClearForcePasswordChange() => ForcePasswordChange = false;
 
     public void Activate() => IsActive = true;
 

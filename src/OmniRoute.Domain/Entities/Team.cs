@@ -34,4 +34,11 @@ public class Team
 
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
+
+    public void Update(string teamName, Guid? leaderId, Guid? storeId)
+    {
+        TeamName = teamName;
+        LeaderId = leaderId;
+        StoreId = storeId;
+    }
 }

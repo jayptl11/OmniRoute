@@ -31,4 +31,7 @@ public class SlaConfig
         MaxHours = maxHours;
         WarningBeforeHours = warningBeforeHours;
     }
+
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
 }

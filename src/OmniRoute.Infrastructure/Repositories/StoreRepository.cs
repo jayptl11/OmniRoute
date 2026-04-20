@@ -16,4 +16,31 @@ internal sealed class StoreRepository : IStoreRepository
 
     public async Task<List<Store>> GetAllActiveAsync(CancellationToken ct = default)
         => await _context.Stores.Where(x => x.IsActive).ToListAsync(ct);
+
+    public async Task<List<Store>> GetAllAsync(string? region = null, bool? isActive = null, CancellationToken ct = default)
+    {
+        var query = _context.Stores.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(region))
+            query = query.Where(x => x.Region != null && x.Region.Contains(region));
+        if (isActive.HasValue)
+            query = query.Where(x => x.IsActive == isActive.Value);
+        return await query.OrderBy(x => x.StoreName).ToListAsync(ct);
+    }
+
+    public async Task<bool> ExistsByCodeAsync(string storeCode, Guid? excludeId = null, CancellationToken ct = default)
+    {
+        var query = _context.Stores.Where(x => x.StoreCode == storeCode);
+        if (excludeId.HasValue)
+            query = query.Where(x => x.Id != excludeId.Value);
+        return await query.AnyAsync(ct);
+    }
+
+    public async Task AddAsync(Store store, CancellationToken ct = default)
+        => await _context.Stores.AddAsync(store, ct);
+
+    public Task UpdateAsync(Store store, CancellationToken ct = default)
+    {
+        _context.Stores.Update(store);
+        return Task.CompletedTask;
+    }
 }

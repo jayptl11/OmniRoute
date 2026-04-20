@@ -5,8 +5,7 @@ using OmniRoute.Infrastructure.BackgroundServices;
 using OmniRoute.Infrastructure.Persistence;
 using OmniRoute.Infrastructure.Repositories;
 using OmniRoute.Infrastructure.Services;
-using OmniRoute.Infrastructure.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using OmniRoute.Infrastructure.Settings;using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<ISlaConfigRepository, SlaConfigRepository>();
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IMasterDataRepository, MasterDataRepository>();
 
         // Routing engine
         services.AddScoped<IRoutingEngine, RoutingEngine>();

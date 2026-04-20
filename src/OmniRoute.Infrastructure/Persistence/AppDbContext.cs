@@ -29,6 +29,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
     public DbSet<SlaConfig> SlaConfigs => Set<SlaConfig>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
 
     public void SetAuditUserId(Guid userId)
     {
@@ -63,6 +64,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
             entity.Property(x => x.Email).IsRequired();
             entity.Property(x => x.PasswordHash).IsRequired();
             entity.Property(x => x.IsActive).HasDefaultValue(true);
+            entity.Property(x => x.ForcePasswordChange).HasDefaultValue(false);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasIndex(x => x.Username).IsUnique();
             entity.HasIndex(x => x.RoleId);
