@@ -9,6 +9,7 @@ using OmniRoute.Application.Features.Users.Commands.ToggleUserStatus;
 using OmniRoute.Application.Features.Users.Commands.UpdateUser;
 using OmniRoute.Application.Features.Users.DTOs;
 using OmniRoute.Application.Features.Users.Queries.GetUsers;
+using OmniRoute.Application.Features.Users.Queries.GetRoles;
 
 namespace OmniRoute.API.Controllers;
 
@@ -35,6 +36,15 @@ public sealed class UsersController : ControllerBase
         var query = new GetUsersQuery(roleName, storeId, isActive, page, pageSize);
         var result = await _sender.Send(query, ct);
         return result.IsSuccess ? Ok(result.Value) : BadRequest(result.ErrorMessage);
+    }
+
+    /// <summary>QT-XX — Lấy danh sách tất cả roles</summary>
+    [HttpGet("roles")]
+    [ProducesResponseType(typeof(List<RoleDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRoles(CancellationToken ct = default)
+    {
+        var roles = await _sender.Send(new GetRolesQuery(), ct);
+        return Ok(roles);
     }
 
     /// <summary>QT-02 — Tạo tài khoản người dùng mới</summary>

@@ -1,4 +1,4 @@
-﻿using OmniRoute.Application.Common.Interfaces;
+using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Features.Auth.Commands.LoginWithGoogle;
 using OmniRoute.Domain.Entities;
 using OmniRoute.UnitTests.Helpers;
@@ -86,8 +86,8 @@ public class LoginWithGoogleCommandHandlerTests
         var users = new List<User>();
         SetupUsersDbSet(users);
 
-        var studentRole = new Role { RoleId = Guid.NewGuid(), RoleName = "Student" };
-        SetupRolesDbSet(new List<Role> { studentRole });
+        var defaultRole = new Role { RoleId = Guid.NewGuid(), RoleName = "TV" };
+        SetupRolesDbSet(new List<Role> { defaultRole });
 
         var userProfiles = new List<UserProfile>();
         SetupUserProfilesDbSet(userProfiles);

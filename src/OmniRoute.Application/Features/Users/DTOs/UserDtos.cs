@@ -16,8 +16,7 @@ public record UserListItemDto(
 public record CreateUserResponse(
     Guid UserId,
     string Username,
-    string Email,
-    string TempPassword);
+    string Email);
 
 public record ToggleUserStatusResponse(
     Guid UserId,

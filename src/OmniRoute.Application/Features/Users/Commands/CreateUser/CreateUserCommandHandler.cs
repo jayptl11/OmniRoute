@@ -12,16 +12,13 @@ internal sealed class CreateUserCommandHandler
 {
     private readonly IApplicationDbContext _db;
     private readonly IPasswordService _passwordService;
-    private readonly IEmailService _emailService;
 
     public CreateUserCommandHandler(
         IApplicationDbContext db,
-        IPasswordService passwordService,
-        IEmailService emailService)
+        IPasswordService passwordService)
     {
         _db = db;
         _passwordService = passwordService;
-        _emailService = emailService;
     }
 
     public async Task<Result<CreateUserResponse>> Handle(
@@ -40,8 +37,7 @@ internal sealed class CreateUserCommandHandler
         if (!roleExists)
             return Result<CreateUserResponse>.Failure("ROLE_NOT_FOUND", "The specified role does not exist.");
 
-        var tempPassword = GenerateTempPassword();
-        var passwordHash = _passwordService.HashPassword(tempPassword);
+        var passwordHash = _passwordService.HashPassword(command.Password);
 
         var user = User.Create(
             Guid.NewGuid(),
@@ -66,26 +62,8 @@ internal sealed class CreateUserCommandHandler
         _db.UserProfiles.Add(profile);
         await _db.SaveChangesAsync(ct);
 
-        await _emailService.SendWelcomeEmailAsync(command.Email, command.Username, tempPassword, ct);
-
         return Result<CreateUserResponse>.Success(
-            new CreateUserResponse(user.UserId, user.Username, user.Email, tempPassword));
+            new CreateUserResponse(user.UserId, user.Username, user.Email));
     }
 
-    private static string GenerateTempPassword()
-    {
-        const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const string lower = "abcdefghijklmnopqrstuvwxyz";
-        const string digits = "0123456789";
-        const string all = upper + lower + digits;
-
-        var rng = new Random();
-        var chars = new char[10];
-        chars[0] = upper[rng.Next(upper.Length)];
-        chars[1] = digits[rng.Next(digits.Length)];
-        for (int i = 2; i < chars.Length; i++)
-            chars[i] = all[rng.Next(all.Length)];
-
-        return new string(chars.OrderBy(_ => rng.Next()).ToArray());
-    }
 }

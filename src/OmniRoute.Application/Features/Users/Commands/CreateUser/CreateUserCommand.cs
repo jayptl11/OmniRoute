@@ -10,4 +10,5 @@ public record CreateUserCommand(
     string? LastName,
     Guid RoleId,
     Guid? StoreId,
-    string? Phone) : ICommand<CreateUserResponse>;
+    string? Phone,
+    string Password) : ICommand<CreateUserResponse>;
