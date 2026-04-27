@@ -207,6 +207,7 @@ internal sealed class RoutingEngine : IRoutingEngine
 
         lead.AssignToUser(assignedUser.UserId, slaDeadline);
         assignedUser.IncrementWorkload();
+        assignedUser.UpdateLastAssigned();
 
         await _context.SaveChangesAsync(ct);
 
@@ -258,11 +259,17 @@ internal sealed class RoutingEngine : IRoutingEngine
         {
             var storeMatch = candidates
                 .Where(u => u.StoreId == preferredStoreId)
-                .MinBy(u => u.CurrentWorkload);
+                .OrderBy(u => u.CurrentWorkload)
+                .ThenBy(u => u.LastAssignedAt ?? DateTime.MinValue)
+                .FirstOrDefault();
             if (storeMatch is not null) return storeMatch;
         }
 
-        return candidates.MinBy(u => u.CurrentWorkload);
+        // BR-02: lowest workload first; tiebreak by oldest LastAssignedAt
+        return candidates
+            .OrderBy(u => u.CurrentWorkload)
+            .ThenBy(u => u.LastAssignedAt ?? DateTime.MinValue)
+            .FirstOrDefault();
     }
 
     private async Task NotifyRoleUsersAsync(Lead lead, string roleName, string notificationType, string title, string body, CancellationToken ct)

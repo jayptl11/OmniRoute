@@ -34,6 +34,7 @@ public class Lead
     public LeadStatus Status { get; private set; }
     public DateTime? SlaDeadline { get; private set; }
     public bool SlaViolated { get; private set; }
+    public DateTime? SlaWarningSentAt { get; private set; }
 
     // Metadata
     public Guid CreatedBy { get; private set; }
@@ -113,6 +114,12 @@ public class Lead
     public void MarkSlaViolated()
     {
         SlaViolated = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void MarkSlaWarningSent()
+    {
+        SlaWarningSentAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
 

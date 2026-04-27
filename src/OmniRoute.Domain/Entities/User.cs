@@ -13,6 +13,7 @@ public class User
     public bool IsActive { get; private set; } = true;
     public bool ForcePasswordChange { get; private set; }
     public int CurrentWorkload { get; private set; }
+    public DateTime? LastAssignedAt { get; private set; }
     public Guid? RoleId { get; private set; }
     public Guid? TeamId { get; private set; }
     public Guid? StoreId { get; private set; }
@@ -80,5 +81,7 @@ public class User
         if (CurrentWorkload > 0)
             CurrentWorkload--;
     }
+
+    public void UpdateLastAssigned() => LastAssignedAt = DateTime.UtcNow;
 }
 

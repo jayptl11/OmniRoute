@@ -10,4 +10,5 @@ public interface ILeadRepository
     Task<string?> GetMaxLeadCodeTodayAsync(string datePrefix, CancellationToken ct = default);
     Task AddAsync(Lead lead, CancellationToken ct = default);
     Task UpdateAsync(Lead lead, CancellationToken ct = default);
+    Task<List<Lead>> GetActiveLeadsForSlaMonitoringAsync(CancellationToken ct = default);
 }

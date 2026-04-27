@@ -91,6 +91,7 @@ public static class DependencyInjection
 
         services.AddLogging(builder => builder.AddConsole());
         services.AddHostedService<TokenBlacklistCleanupService>();
+        services.AddHostedService<SlaMonitoringService>();
         return services;
     }
 }

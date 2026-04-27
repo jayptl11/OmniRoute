@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OmniRoute.Domain.Entities;
+using OmniRoute.Domain.Enums;
 using OmniRoute.Domain.Interfaces;
 using OmniRoute.Infrastructure.Persistence;
 
@@ -41,4 +42,12 @@ internal sealed class LeadRepository : ILeadRepository
         _context.Leads.Update(lead);
         return Task.CompletedTask;
     }
+
+    public async Task<List<Lead>> GetActiveLeadsForSlaMonitoringAsync(CancellationToken ct = default)
+        => await _context.Leads
+            .Where(x => x.SlaDeadline != null
+                        && x.Status != LeadStatus.Won
+                        && x.Status != LeadStatus.Lost
+                        && x.Status != LeadStatus.Cancelled)
+            .ToListAsync(ct);
 }
