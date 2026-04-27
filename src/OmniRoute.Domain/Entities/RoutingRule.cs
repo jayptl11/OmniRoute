@@ -54,4 +54,23 @@ public class RoutingRule
 
     public void Activate() { IsActive = true; UpdatedAt = DateTime.UtcNow; }
     public void Deactivate() { IsActive = false; UpdatedAt = DateTime.UtcNow; }
+
+    public void Update(
+        string ruleName,
+        int priorityOrder,
+        AssignedGroup actionGroup,
+        string? description,
+        string? conditionChannelJson,
+        string? conditionKeywordsJson,
+        Guid? actionTeamId)
+    {
+        RuleName = ruleName;
+        PriorityOrder = priorityOrder;
+        ActionGroup = actionGroup;
+        Description = description;
+        ConditionChannelJson = conditionChannelJson;
+        ConditionKeywordsJson = conditionKeywordsJson;
+        ActionTeamId = actionTeamId;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
