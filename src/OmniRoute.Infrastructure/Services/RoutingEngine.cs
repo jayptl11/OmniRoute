@@ -238,6 +238,14 @@ internal sealed class RoutingEngine : IRoutingEngine
         );
         await _activityLogRepository.AddAsync(log, ct);
         await _context.SaveChangesAsync(ct);
+
+        // CS group: create Ticket entity so CS-01..CS-08 endpoints can surface it
+        if (actionGroup == AssignedGroup.Cskh)
+        {
+            var ticket = await BuildTicketFromLeadAsync(lead, assignedUser.UserId, slaDeadline, ct);
+            await _context.Tickets.AddAsync(ticket, ct);
+            await _context.SaveChangesAsync(ct);
+        }
     }
 
     private async Task<User?> FindLeastLoadedUserAsync(string roleName, Guid? preferredStoreId, CancellationToken ct)
@@ -291,5 +299,54 @@ internal sealed class RoutingEngine : IRoutingEngine
             );
             await _notificationRepository.AddAsync(notification, ct);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Ticket creation helpers (used when routing to Cskh group)
+    // -----------------------------------------------------------------------
+    private async Task<Ticket> BuildTicketFromLeadAsync(
+        Lead lead, Guid assignedUserId, DateTime slaDeadline, CancellationToken ct)
+    {
+        var ticketCode = await GenerateTicketCodeAsync(ct);
+
+        var ticket = Ticket.Create(
+            ticketCode: ticketCode,
+            customerName: lead.CustomerName,
+            customerPhone: lead.CustomerPhone,
+            channel: lead.Channel,
+            needDescription: lead.NeedDescription,
+            createdBy: lead.CreatedBy,
+            customerAddress: lead.CustomerAddress,
+            customerEmail: lead.CustomerEmail,
+            leadId: lead.Id
+        );
+
+        if (lead.NeedType.HasValue && lead.PriorityLevel.HasValue)
+            ticket.SetClassification(lead.NeedType.Value, lead.PriorityScore, lead.PriorityLevel.Value);
+
+        ticket.SetSystemAssignment(assignedUserId, slaDeadline, lead.AssignedStoreId);
+
+        return ticket;
+    }
+
+    private async Task<string> GenerateTicketCodeAsync(CancellationToken ct)
+    {
+        var today = DateTime.UtcNow.ToString("yyyyMMdd");
+        var prefix = $"TK{today}";
+
+        var maxCode = await _context.Tickets
+            .Where(x => x.TicketCode.StartsWith(prefix))
+            .OrderByDescending(x => x.TicketCode)
+            .Select(x => x.TicketCode)
+            .FirstOrDefaultAsync(ct);
+
+        int seq = 1;
+        if (maxCode is not null && maxCode.Length > prefix.Length
+            && int.TryParse(maxCode[prefix.Length..], out var last))
+        {
+            seq = last + 1;
+        }
+
+        return $"{prefix}{seq:D3}";
     }
 }

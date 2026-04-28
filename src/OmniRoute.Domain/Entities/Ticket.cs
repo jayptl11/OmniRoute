@@ -106,6 +106,20 @@ public class Ticket
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Gán ticket tự động bởi routing engine — status GIỮ NGUYÊN là New.
+    /// CS user tự chuyển sang InProgress qua CS-04 khi bắt đầu xử lý.
+    /// </summary>
+    public void SetSystemAssignment(Guid userId, DateTime slaDeadline, Guid? storeId = null)
+    {
+        AssignedUserId = userId;
+        AssignedAt = DateTime.UtcNow;
+        SlaDeadline = slaDeadline;
+        AssignedStoreId = storeId;
+        UpdatedAt = DateTime.UtcNow;
+        // Status stays New intentionally — CS-04 handles New → InProgress
+    }
+
     // CS-04: Chuyển trạng thái theo luồng CSKH (BR-05 — cơ bản một chiều, ngoại trừ WaitingCustomer ↔ InProgress)
     // Transitions:
     //   New              → InProgress
