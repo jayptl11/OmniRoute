@@ -73,3 +73,72 @@ public record UpdateLeadResponse(
     string LeadCode,
     DateTime UpdatedAt
 );
+
+// SA-02: Activity log entry hiển thị trong timeline lead
+public record ActivityLogItemDto(
+    Guid Id,
+    string Action,
+    string? Note,
+    string? NewValue,
+    DateTime PerformedAt,
+    string? PerformedByName
+);
+
+// SA-01 / SA-03: Danh sách lead được gán cho Sale
+public record SaleLeadListItemDto(
+    Guid LeadId,
+    string LeadCode,
+    string CustomerName,
+    string CustomerPhone,
+    string? NeedType,
+    string LeadStatus,
+    string? PriorityLevel,
+    DateTime? SlaDeadline,
+    bool SlaViolated,
+    DateTime? AssignedAt
+);
+
+// SA-02: Chi tiết lead Sale (bao gồm timeline activity)
+public record SaleLeadDetailDto(
+    Guid LeadId,
+    string LeadCode,
+    string CustomerName,
+    string CustomerPhone,
+    string? CustomerAddress,
+    string? CustomerEmail,
+    string Channel,
+    string NeedDescription,
+    List<string>? ProductInterest,
+    string? NeedType,
+    int PriorityScore,
+    string? PriorityLevel,
+    string? AssignedGroup,
+    string? RoutingType,
+    Guid? AssignedUserId,
+    string? AssignedUserName,
+    Guid? AssignedStoreId,
+    DateTime? AssignedAt,
+    DateTime? SlaDeadline,
+    bool SlaViolated,
+    string LeadStatus,
+    Guid CreatedBy,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    DateTime? ClosedAt,
+    List<ActivityLogItemDto> ActivityLogs
+);
+
+// SA-04: Response khi cập nhật trạng thái lead
+public record UpdateLeadStatusResponse(
+    Guid LeadId,
+    string LeadCode,
+    string NewStatus,
+    DateTime UpdatedAt
+);
+
+// SA-05: Response khi thêm ghi chú tư vấn
+public record AddLeadNoteResponse(
+    Guid NoteId,
+    Guid LeadId,
+    DateTime CreatedAt
+);

@@ -138,4 +138,29 @@ public class Lead
         if (needDescription is not null) NeedDescription = needDescription;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    // SA-04: Chuyển trạng thái theo luồng Sale (BR-05: một chiều)
+    // Các transition hợp lệ:
+    //   Assigned    → Contacted | Cancelled
+    //   Contacted   → InProgress | Cancelled
+    //   InProgress  → Won | Lost | Cancelled
+    private static readonly Dictionary<LeadStatus, HashSet<LeadStatus>> _allowedTransitions = new()
+    {
+        [LeadStatus.Assigned]   = [LeadStatus.Contacted, LeadStatus.Cancelled],
+        [LeadStatus.Contacted]  = [LeadStatus.InProgress, LeadStatus.Cancelled],
+        [LeadStatus.InProgress] = [LeadStatus.Won, LeadStatus.Lost, LeadStatus.Cancelled],
+    };
+
+    public void TransitionStatus(LeadStatus newStatus)
+    {
+        if (!_allowedTransitions.TryGetValue(Status, out var allowed) || !allowed.Contains(newStatus))
+            throw new InvalidOperationException(
+                $"Không thể chuyển từ trạng thái '{Status}' sang '{newStatus}'.");
+
+        Status = newStatus;
+        UpdatedAt = DateTime.UtcNow;
+
+        if (newStatus is LeadStatus.Won or LeadStatus.Lost or LeadStatus.Cancelled)
+            ClosedAt = DateTime.UtcNow;
+    }
 }
