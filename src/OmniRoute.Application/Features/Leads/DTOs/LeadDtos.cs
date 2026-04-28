@@ -142,3 +142,45 @@ public record AddLeadNoteResponse(
     Guid LeadId,
     DateTime CreatedAt
 );
+
+// SA-08: Response khi báo lead không hợp lệ
+public record ReportInvalidLeadResponse(
+    Guid LeadId,
+    string LeadCode,
+    DateTime CancelledAt
+);
+
+// SA-06: Response khi đặt nhắc nhở follow-up
+public record CreateFollowUpTaskResponse(
+    Guid TaskId,
+    Guid LeadId,
+    DateTime DueAt,
+    DateTime CreatedAt
+);
+
+// SA-07: Item trong danh sách nhắc nhở
+public record FollowUpTaskListItemDto(
+    Guid TaskId,
+    Guid LeadId,
+    string LeadCode,
+    string CustomerName,
+    string CustomerPhone,
+    DateTime DueAt,
+    string Note,
+    bool IsOverdue,
+    bool IsToday
+);
+
+// SA-09: Hiệu suất cá nhân theo kỳ
+public record PersonalPerformanceDto(
+    string Period,
+    DateTime PeriodStart,
+    DateTime PeriodEnd,
+    int TotalAssigned,
+    int TotalProcessed,
+    int WonCount,
+    double? WinRate,
+    double? AvgResponseTimeMinutes,
+    int SlaViolatedCount,
+    DateTime GeneratedAt
+);

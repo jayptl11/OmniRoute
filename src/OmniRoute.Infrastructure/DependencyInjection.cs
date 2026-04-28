@@ -49,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IMasterDataRepository, MasterDataRepository>();
+        services.AddScoped<IFollowUpTaskRepository, FollowUpTaskRepository>();
 
         // Routing engine
         services.AddScoped<IRoutingEngine, RoutingEngine>();

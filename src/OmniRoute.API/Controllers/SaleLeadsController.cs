@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.Commands.AddLeadNote;
+using OmniRoute.Application.Features.Leads.Commands.CreateFollowUpTask;
+using OmniRoute.Application.Features.Leads.Commands.ReportInvalidLead;
 using OmniRoute.Application.Features.Leads.Commands.UpdateLeadStatus;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Application.Features.Leads.Queries.GetAssignedLeadById;
 using OmniRoute.Application.Features.Leads.Queries.GetAssignedLeads;
+using OmniRoute.Application.Features.Leads.Queries.GetFollowUpTasks;
+using OmniRoute.Application.Features.Leads.Queries.GetPersonalPerformance;
 
 namespace OmniRoute.API.Controllers;
 
@@ -119,5 +123,97 @@ public sealed class SaleLeadsController : ControllerBase
         }
 
         return CreatedAtAction(nameof(GetById), new { id = result.Value!.LeadId }, result.Value);
+    }
+
+    /// <summary>
+    /// SA-08: Báo lead không hợp lệ (Spam / SĐT sai / Không liên lạc được).
+    /// Chuyển lead sang Cancelled và gửi notification đến Trưởng nhóm để review.
+    /// </summary>
+    [HttpPatch("{id:guid}/report-invalid")]
+    [ProducesResponseType(typeof(ReportInvalidLeadResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReportInvalid(
+        Guid id,
+        [FromBody] ReportInvalidLeadCommand command,
+        CancellationToken ct)
+    {
+        if (id != command.LeadId)
+            return BadRequest(new { ErrorCode = "ID_MISMATCH", ErrorMessage = "ID trong URL và body không khớp." });
+
+        var result = await _sender.Send(command, ct);
+
+        if (result.IsFailure)
+        {
+            if (result.ErrorCode is "NOT_FOUND")
+                return NotFound(new { result.ErrorCode, result.ErrorMessage });
+
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// SA-06: Đặt nhắc nhở follow-up cho một lead.
+    /// DueAt phải ở trong tương lai (UTC).
+    /// </summary>
+    [HttpPost("{id:guid}/follow-ups")]
+    [ProducesResponseType(typeof(CreateFollowUpTaskResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateFollowUp(
+        Guid id,
+        [FromBody] CreateFollowUpTaskCommand command,
+        CancellationToken ct)
+    {
+        if (id != command.LeadId)
+            return BadRequest(new { ErrorCode = "ID_MISMATCH", ErrorMessage = "ID trong URL và body không khớp." });
+
+        var result = await _sender.Send(command, ct);
+
+        if (result.IsFailure)
+        {
+            if (result.ErrorCode is "NOT_FOUND")
+                return NotFound(new { result.ErrorCode, result.ErrorMessage });
+
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        }
+
+        return StatusCode(StatusCodes.Status201Created, result.Value);
+    }
+
+    /// <summary>
+    /// SA-07: Danh sách nhắc nhở follow-up chưa hoàn thành của nhân viên SA hiện tại.
+    /// filter: null = tất cả | "today" = hôm nay | "upcoming" = sắp đến | "overdue" = đã quá hạn.
+    /// Sắp xếp theo DueAt ASC.
+    /// </summary>
+    [HttpGet("follow-ups")]
+    [ProducesResponseType(typeof(List<FollowUpTaskListItemDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetFollowUps(
+        [FromQuery] string? filter,
+        CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetFollowUpTasksQuery(filter), ct);
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// SA-09: Hiệu suất cá nhân theo kỳ.
+    /// period: "week" | "month" | "quarter".
+    /// </summary>
+    [HttpGet("performance")]
+    [ProducesResponseType(typeof(PersonalPerformanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetPerformance(
+        [FromQuery] string period = "month",
+        CancellationToken ct = default)
+    {
+        var result = await _sender.Send(new GetPersonalPerformanceQuery(period), ct);
+
+        if (result.IsFailure)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+
+        return Ok(result.Value);
     }
 }

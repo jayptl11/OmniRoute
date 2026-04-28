@@ -30,6 +30,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<SlaConfig> SlaConfigs => Set<SlaConfig>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
+    public DbSet<FollowUpTask> FollowUpTasks => Set<FollowUpTask>();
 
     public void SetAuditUserId(Guid userId)
     {
