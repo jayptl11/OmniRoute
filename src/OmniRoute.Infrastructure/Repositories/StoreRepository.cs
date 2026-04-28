@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OmniRoute.Domain.Entities;
+using OmniRoute.Domain.Enums;
 using OmniRoute.Domain.Interfaces;
 using OmniRoute.Infrastructure.Persistence;
 
@@ -42,5 +43,33 @@ internal sealed class StoreRepository : IStoreRepository
     {
         _context.Stores.Update(store);
         return Task.CompletedTask;
+    }
+
+    // DP-03: Danh sách tất cả cửa hàng kèm số lead đang active
+    public async Task<List<(Store Store, int ActiveLeads)>> GetStoresWithActiveLeadCountAsync(
+        CancellationToken ct = default)
+    {
+        var activeStatuses = new[]
+        {
+            LeadStatus.Assigned,
+            LeadStatus.Contacted,
+            LeadStatus.InProgress
+        };
+
+        var stores = await _context.Stores
+            .OrderBy(s => s.StoreName)
+            .ToListAsync(ct);
+
+        var activeLeadCounts = await _context.Leads
+            .Where(l => l.AssignedStoreId.HasValue && activeStatuses.Contains(l.Status))
+            .GroupBy(l => l.AssignedStoreId!.Value)
+            .Select(g => new { StoreId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        var countDict = activeLeadCounts.ToDictionary(x => x.StoreId, x => x.Count);
+
+        return stores
+            .Select(s => (s, countDict.TryGetValue(s.Id, out var c) ? c : 0))
+            .ToList();
     }
 }

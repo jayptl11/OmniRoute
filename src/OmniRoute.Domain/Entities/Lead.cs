@@ -105,6 +105,20 @@ public class Lead
         UpdatedAt = DateTime.UtcNow;
     }
 
+    // DP-04: Gán lead về cửa hàng cụ thể (điều phối thủ công)
+    public void DispatchToStore(Guid storeId, DateTime slaDeadline)
+    {
+        if (Status != LeadStatus.PendingDispatch)
+            throw new InvalidOperationException(
+                $"Chỉ có thể gán cửa hàng cho lead đang ở trạng thái PendingDispatch. Trạng thái hiện tại: '{Status}'.");
+
+        AssignedStoreId = storeId;
+        AssignedAt = DateTime.UtcNow;
+        SlaDeadline = slaDeadline;
+        Status = LeadStatus.Assigned;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void SetPendingAssignment()
     {
         Status = LeadStatus.PendingAssignment;

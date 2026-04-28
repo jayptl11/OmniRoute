@@ -10,4 +10,7 @@ public interface IStoreRepository
     Task<bool> ExistsByCodeAsync(string storeCode, Guid? excludeId = null, CancellationToken ct = default);
     Task AddAsync(Store store, CancellationToken ct = default);
     Task UpdateAsync(Store store, CancellationToken ct = default);
+
+    // DP-03: Tình trạng từng cửa hàng (kèm số lead đang active)
+    Task<List<(Store Store, int ActiveLeads)>> GetStoresWithActiveLeadCountAsync(CancellationToken ct = default);
 }

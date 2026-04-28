@@ -50,4 +50,63 @@ internal sealed class LeadRepository : ILeadRepository
                         && x.Status != LeadStatus.Lost
                         && x.Status != LeadStatus.Cancelled)
             .ToListAsync(ct);
+
+    // DP-01 + DP-07: Queue lead chờ điều phối, có filter + phân trang
+    public async Task<(List<Lead> Items, int TotalCount)> GetPendingDispatchLeadsAsync(
+        string? search,
+        string? priorityLevel,
+        string? addressContains,
+        int? waitedMoreThanMinutes,
+        int page,
+        int pageSize,
+        CancellationToken ct = default)
+    {
+        var query = _context.Leads
+            .Where(x => x.Status == LeadStatus.PendingDispatch)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x =>
+                x.CustomerPhone == search ||
+                x.CustomerName.Contains(search));
+
+        if (!string.IsNullOrWhiteSpace(priorityLevel) &&
+            Enum.TryParse<PriorityLevel>(priorityLevel, ignoreCase: true, out var level))
+            query = query.Where(x => x.PriorityLevel == level);
+
+        if (!string.IsNullOrWhiteSpace(addressContains))
+            query = query.Where(x => x.CustomerAddress != null && x.CustomerAddress.Contains(addressContains));
+
+        if (waitedMoreThanMinutes.HasValue)
+        {
+            var threshold = DateTime.UtcNow.AddMinutes(-waitedMoreThanMinutes.Value);
+            query = query.Where(x => x.CreatedAt <= threshold);
+        }
+
+        // Sắp xếp: HIGH priority trước, sau đó chờ lâu nhất lên đầu (CreatedAt tăng dần)
+        query = query
+            .OrderByDescending(x => x.PriorityLevel)
+            .ThenBy(x => x.CreatedAt);
+
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, totalCount);
+    }
+
+    // DP-06: Lịch sử lead đã được user này phân công (có log DISPATCHED_TO_STORE)
+    public async Task<List<Lead>> GetDispatchedByUserAsync(Guid dispatchedByUserId, CancellationToken ct = default)
+        => await _context.ActivityLogs
+            .Where(al => al.Action == "DISPATCHED_TO_STORE"
+                         && al.EntityType == "LEAD"
+                         && al.PerformedBy == dispatchedByUserId)
+            .Join(_context.Leads,
+                al => al.EntityId,
+                l => l.Id,
+                (al, l) => l)
+            .Distinct()
+            .ToListAsync(ct);
 }
