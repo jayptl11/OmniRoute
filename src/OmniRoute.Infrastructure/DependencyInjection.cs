@@ -42,6 +42,7 @@ public static class DependencyInjection
 
         // Lead management repositories
         services.AddScoped<ILeadRepository, LeadRepository>();
+        services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IStoreRepository, StoreRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IRoutingRuleRepository, RoutingRuleRepository>();

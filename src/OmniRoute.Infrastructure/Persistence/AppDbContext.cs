@@ -23,6 +23,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
 
     // Lead management
     public DbSet<Lead> Leads => Set<Lead>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<RoutingRule> RoutingRules => Set<RoutingRule>();

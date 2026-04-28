@@ -13,6 +13,7 @@ namespace OmniRoute.Application.Common.Interfaces
 
         // Lead management
         DbSet<Lead> Leads { get; }
+        DbSet<Ticket> Tickets { get; }
         DbSet<Store> Stores { get; }
         DbSet<Team> Teams { get; }
         DbSet<RoutingRule> RoutingRules { get; }
