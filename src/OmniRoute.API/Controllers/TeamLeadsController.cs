@@ -7,6 +7,7 @@ using OmniRoute.Application.Features.Leads.Commands.AddInternalNote;
 using OmniRoute.Application.Features.Leads.Commands.ReassignLead;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Application.Features.Leads.Queries.GetEscalateHistory;
+using OmniRoute.Application.Features.Leads.Queries.GetEscalateTargets;
 using OmniRoute.Application.Features.Leads.Queries.GetSlaViolations;
 using OmniRoute.Application.Features.Leads.Queries.GetTeamLeadOverview;
 using OmniRoute.Application.Features.Leads.Queries.GetTeamLeads;
@@ -110,6 +111,17 @@ public sealed class TeamLeadsController : ControllerBase
             return BadRequest(new { result.ErrorCode, result.ErrorMessage });
         }
         return NoContent();
+    }
+
+    /// <summary>TN-05 helper — Danh sách user active có role TN/QL/QT để populate dropdown EscalateDialog.</summary>
+    [HttpGet("escalate-targets")]
+    [ProducesResponseType(typeof(List<EscalateTargetDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetEscalateTargets(CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetEscalateTargetsQuery(), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        return Ok(result.Value);
     }
 
     /// <summary>TN-06 — Lịch sử escalate lead đã thực hiện bởi TN hiện tại.</summary>
