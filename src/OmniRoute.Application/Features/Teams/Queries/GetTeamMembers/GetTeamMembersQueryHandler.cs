@@ -30,6 +30,8 @@ internal sealed class GetTeamMembersQueryHandler
         var members = await _db.Users
             .AsNoTracking()
             .Where(u => u.TeamId == teamId)
+            .OrderBy(u => u.FirstName)
+            .ThenBy(u => u.LastName)
             .Select(u => new TeamMemberDto(
                 u.UserId,
                 (u.FirstName + " " + u.LastName).Trim(),
@@ -37,7 +39,6 @@ internal sealed class GetTeamMembersQueryHandler
                 u.IsActive,
                 u.CurrentWorkload,
                 u.LastAssignedAt))
-            .OrderBy(m => m.FullName)
             .ToListAsync(ct);
 
         return Result<List<TeamMemberDto>>.Success(members);
