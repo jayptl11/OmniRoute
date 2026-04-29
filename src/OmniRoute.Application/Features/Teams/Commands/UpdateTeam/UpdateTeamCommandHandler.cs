@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
@@ -22,7 +23,28 @@ internal sealed class UpdateTeamCommandHandler : ICommandHandler<UpdateTeamComma
         if (team is null)
             return Result.Failure("NOT_FOUND", "Team not found.");
 
+        var oldLeaderId = team.LeaderId;
         team.Update(command.TeamName, command.LeaderId, command.StoreId);
+
+        // Nếu trưởng nhóm thay đổi: xóa TeamId của TN cũ, gán TeamId cho TN mới
+        if (oldLeaderId != command.LeaderId)
+        {
+            if (oldLeaderId.HasValue)
+            {
+                var oldLeader = await _db.Users.FirstOrDefaultAsync(u => u.UserId == oldLeaderId.Value, ct);
+                // Chỉ xóa nếu họ đang ở chính đội này (tránh xóa nếu họ đã được gán sang đội khác)
+                if (oldLeader is not null && oldLeader.TeamId == team.Id)
+                    oldLeader.AssignToTeam(null);
+            }
+
+            if (command.LeaderId.HasValue)
+            {
+                var newLeader = await _db.Users.FirstOrDefaultAsync(u => u.UserId == command.LeaderId.Value, ct);
+                if (newLeader is not null)
+                    newLeader.AssignToTeam(team.Id);
+            }
+        }
+
         await _repository.UpdateAsync(team, ct);
         await _db.SaveChangesAsync(ct);
 

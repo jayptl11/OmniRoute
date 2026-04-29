@@ -113,12 +113,16 @@ public sealed class TeamLeadsController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>TN-05 helper — Danh sách user active có role TN/QL/QT để populate dropdown EscalateDialog.</summary>
+    /// <summary>
+    /// TN-05 helper — Dropdown chọn người escalate.
+    /// Không nhập q → trả về tất cả TN.
+    /// Có q → search TN/QL/QT theo tên hoặc username.
+    /// </summary>
     [HttpGet("escalate-targets")]
     [ProducesResponseType(typeof(List<EscalateTargetDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetEscalateTargets(CancellationToken ct)
+    public async Task<IActionResult> GetEscalateTargets([FromQuery] string? q, CancellationToken ct)
     {
-        var result = await _sender.Send(new GetEscalateTargetsQuery(), ct);
+        var result = await _sender.Send(new GetEscalateTargetsQuery(q), ct);
         if (!result.IsSuccess)
             return BadRequest(new { result.ErrorCode, result.ErrorMessage });
         return Ok(result.Value);

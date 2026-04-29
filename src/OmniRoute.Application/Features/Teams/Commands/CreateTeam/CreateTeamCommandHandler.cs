@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
@@ -22,6 +23,15 @@ internal sealed class CreateTeamCommandHandler : ICommandHandler<CreateTeamComma
         var team = Team.Create(command.TeamName, command.TeamType, command.LeaderId, command.StoreId);
 
         await _repository.AddAsync(team, ct);
+
+        // Gán TeamId cho TN trưởng nhóm để JWT claim teamId hoạt động đúng
+        if (command.LeaderId.HasValue)
+        {
+            var leader = await _db.Users.FirstOrDefaultAsync(u => u.UserId == command.LeaderId.Value, ct);
+            if (leader is not null)
+                leader.AssignToTeam(team.Id);
+        }
+
         await _db.SaveChangesAsync(ct);
 
         return Result<Guid>.Success(team.Id);
