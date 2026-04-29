@@ -13,14 +13,18 @@ internal sealed class StoreRepository : IStoreRepository
     public StoreRepository(AppDbContext context) => _context = context;
 
     public async Task<Store?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => await _context.Stores.FirstOrDefaultAsync(x => x.Id == id, ct);
+        => await _context.Stores
+            .Include(s => s.Manager)
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
 
     public async Task<List<Store>> GetAllActiveAsync(CancellationToken ct = default)
         => await _context.Stores.Where(x => x.IsActive).ToListAsync(ct);
 
-    public async Task<List<Store>> GetAllAsync(string? region = null, bool? isActive = null, CancellationToken ct = default)
+    public async Task<List<Store>> GetAllAsync(string? search = null, string? region = null, bool? isActive = null, CancellationToken ct = default)
     {
-        var query = _context.Stores.AsQueryable();
+        var query = _context.Stores.Include(s => s.Manager).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.StoreName.Contains(search) || x.StoreCode.Contains(search));
         if (!string.IsNullOrWhiteSpace(region))
             query = query.Where(x => x.Region != null && x.Region.Contains(region));
         if (isActive.HasValue)

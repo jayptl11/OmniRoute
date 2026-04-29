@@ -8,4 +8,4 @@ public record UpdateStoreCommand(
     int MaxCapacity,
     string? Address,
     string? Region,
-    Guid? ManagerId) : ICommand;
+    string? ManagerUsername) : ICommand;

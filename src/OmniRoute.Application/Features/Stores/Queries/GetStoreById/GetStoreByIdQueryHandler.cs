@@ -19,6 +19,9 @@ internal sealed class GetStoreByIdQueryHandler : IQueryHandler<GetStoreByIdQuery
 
         return Result<StoreDto>.Success(new StoreDto(
             store.Id, store.StoreCode, store.StoreName, store.Address,
-            store.Region, store.ManagerId, store.MaxCapacity, store.IsActive, store.CreatedAt));
+            store.Region, store.ManagerId,
+            store.Manager is null ? null : $"{store.Manager.FirstName} {store.Manager.LastName}".Trim(),
+            store.Manager?.Username,
+            store.MaxCapacity, store.IsActive, store.CreatedAt));
     }
 }

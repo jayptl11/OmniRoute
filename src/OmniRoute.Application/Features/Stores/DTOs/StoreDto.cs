@@ -7,6 +7,8 @@ public record StoreDto(
     string? Address,
     string? Region,
     Guid? ManagerId,
+    string? ManagerName,
+    string? ManagerUsername,
     int MaxCapacity,
     bool IsActive,
     DateTime CreatedAt);

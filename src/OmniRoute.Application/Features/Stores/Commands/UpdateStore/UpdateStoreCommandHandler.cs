@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
@@ -22,10 +23,53 @@ internal sealed class UpdateStoreCommandHandler : ICommandHandler<UpdateStoreCom
         if (store is null)
             return Result.Failure("NOT_FOUND", "Store not found.");
 
-        store.Update(command.StoreName, command.MaxCapacity, command.Address, command.Region, command.ManagerId);
+        // Resolve new manager by username (optional)
+        Guid? newManagerId = null;
+        if (!string.IsNullOrWhiteSpace(command.ManagerUsername))
+        {
+            var newManager = await _db.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Username == command.ManagerUsername, ct);
+
+            if (newManager is null)
+                return Result.Failure("MANAGER_NOT_FOUND",
+                    $"Không tìm thấy người dùng '{command.ManagerUsername}'.");
+
+            if (newManager.Role?.RoleName != "QL")
+                return Result.Failure("INVALID_MANAGER_ROLE",
+                    "Chỉ có thể gán người dùng có role QL làm quản lý đơn vị.");
+
+            if (!newManager.IsActive)
+                return Result.Failure("MANAGER_INACTIVE",
+                    "Người dùng đã bị khóa, không thể gán làm quản lý đơn vị.");
+
+            // If changing manager, clear old manager's StoreId
+            if (store.ManagerId.HasValue && store.ManagerId != newManager.UserId)
+            {
+                var oldManager = await _db.Users.FirstOrDefaultAsync(
+                    u => u.UserId == store.ManagerId, ct);
+                oldManager?.AssignToStore(null);
+            }
+
+            newManager.AssignToStore(store.Id);
+            newManagerId = newManager.UserId;
+        }
+        else
+        {
+            // ManagerUsername is null/empty → clear manager
+            if (store.ManagerId.HasValue)
+            {
+                var oldManager = await _db.Users.FirstOrDefaultAsync(
+                    u => u.UserId == store.ManagerId, ct);
+                oldManager?.AssignToStore(null);
+            }
+        }
+
+        store.Update(command.StoreName, command.MaxCapacity, command.Address, command.Region, newManagerId);
         await _repository.UpdateAsync(store, ct);
         await _db.SaveChangesAsync(ct);
 
         return Result.Success();
     }
 }
+

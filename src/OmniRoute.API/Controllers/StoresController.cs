@@ -7,6 +7,7 @@ using OmniRoute.Application.Features.Stores.Commands.UpdateStore;
 using OmniRoute.Application.Features.Stores.DTOs;
 using OmniRoute.Application.Features.Stores.Queries.GetStoreById;
 using OmniRoute.Application.Features.Stores.Queries.GetStores;
+using OmniRoute.Application.Features.Stores.Queries.SearchStoreManagers;
 
 namespace OmniRoute.API.Controllers;
 
@@ -19,15 +20,25 @@ public sealed class StoresController : ControllerBase
 
     public StoresController(ISender sender) => _sender = sender;
 
-    /// <summary>QT-10 — Danh sách cửa hàng (có lọc)</summary>
+    /// <summary>QT-10 — Tìm kiếm QL để gán làm quản lý cửa hàng.</summary>
+    [HttpGet("managers/search")]
+    [ProducesResponseType(typeof(List<StoreManagerDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SearchManagers([FromQuery] string? q, CancellationToken ct)
+    {
+        var result = await _sender.Send(new SearchStoreManagersQuery(q), ct);
+        return Ok(result.Value);
+    }
+
+    /// <summary>QT-10 — Danh sách cửa hàng (có lọc). search: tìm theo tên hoặc mã, region: lọc khu vực, isActive: lọc trạng thái. Bỏ trống → trả về tất cả.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<StoreDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetStores(
+        [FromQuery] string? search,
         [FromQuery] string? region,
         [FromQuery] bool? isActive,
         CancellationToken ct)
     {
-        var result = await _sender.Send(new GetStoresQuery(region, isActive), ct);
+        var result = await _sender.Send(new GetStoresQuery(search, region, isActive), ct);
         return Ok(result.Value);
     }
 

@@ -13,9 +13,13 @@ internal sealed class GetStoresQueryHandler : IQueryHandler<GetStoresQuery, List
 
     public async Task<Result<List<StoreDto>>> Handle(GetStoresQuery query, CancellationToken ct)
     {
-        var stores = await _repository.GetAllAsync(query.Region, query.IsActive, ct);
+        var stores = await _repository.GetAllAsync(query.Search, query.Region, query.IsActive, ct);
         var dtos = stores.Select(s => new StoreDto(
-            s.Id, s.StoreCode, s.StoreName, s.Address, s.Region, s.ManagerId, s.MaxCapacity, s.IsActive, s.CreatedAt))
+            s.Id, s.StoreCode, s.StoreName, s.Address, s.Region,
+            s.ManagerId,
+            s.Manager is null ? null : $"{s.Manager.FirstName} {s.Manager.LastName}".Trim(),
+            s.Manager?.Username,
+            s.MaxCapacity, s.IsActive, s.CreatedAt))
             .ToList();
         return Result<List<StoreDto>>.Success(dtos);
     }

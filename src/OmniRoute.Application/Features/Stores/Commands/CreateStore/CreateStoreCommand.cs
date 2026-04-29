@@ -9,4 +9,4 @@ public record CreateStoreCommand(
     int MaxCapacity,
     string? Address,
     string? Region,
-    Guid? ManagerId) : ICommand<StoreDto>;
+    string? ManagerUsername) : ICommand<StoreDto>;
