@@ -184,3 +184,45 @@ public record PersonalPerformanceDto(
     int SlaViolatedCount,
     DateTime GeneratedAt
 );
+
+// TN-03: Danh sách lead trong đội
+public record TeamLeadListItemDto(
+    Guid LeadId,
+    string LeadCode,
+    string CustomerName,
+    string CustomerPhone,
+    string? NeedType,
+    string LeadStatus,
+    string? PriorityLevel,
+    DateTime? SlaDeadline,
+    bool SlaViolated,
+    Guid? AssignedUserId,
+    string? AssignedUserName
+);
+
+// TN-02: Lead vi phạm / sắp vi phạm SLA
+public record SlaViolationDto(
+    Guid LeadId,
+    string LeadCode,
+    string CustomerName,
+    string CustomerPhone,
+    string? NeedType,
+    string LeadStatus,
+    string? PriorityLevel,
+    DateTime? SlaDeadline,
+    bool SlaViolated,
+    Guid? AssignedUserId,
+    string? AssignedUserName,
+    double? HoursUntilDeadline
+);
+
+// TN-01: Tổng quan queue và backlog của đội
+public record TeamLeadOverviewDto(
+    int PendingResponse,
+    int InProgress,
+    int SlaViolated,
+    int SlaNearDeadline,
+    List<DailyLeadTrendDto> TrendLast7Days
+);
+
+public record DailyLeadTrendDto(string Date, int Count);

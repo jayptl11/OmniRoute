@@ -50,10 +50,11 @@ internal sealed class GetAssignedTicketByIdQueryHandler
         }
 
         // Activity timeline (sắp xếp theo thời gian tăng dần)
+        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho CS
         var activityLogs = await _db.ActivityLogs
             .AsNoTracking()
             .Include(al => al.PerformedByUser)
-            .Where(al => al.EntityType == "TICKET" && al.EntityId == ticket.Id)
+            .Where(al => al.EntityType == "TICKET" && al.EntityId == ticket.Id && !al.IsInternal)
             .OrderBy(al => al.PerformedAt)
             .Select(al => new TicketActivityLogItemDto(
                 al.Id,

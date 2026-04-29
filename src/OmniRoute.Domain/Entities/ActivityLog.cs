@@ -10,6 +10,7 @@ public class ActivityLog
     public string? NewValue { get; private set; } // JSON
     public string? Note { get; private set; }
     public Guid? PerformedBy { get; private set; } // null = system
+    public bool IsInternal { get; private set; } // true = chỉ TN/QL/QT xem được
     public DateTime PerformedAt { get; private set; }
 
     // Navigation
@@ -24,7 +25,8 @@ public class ActivityLog
         Guid? performedBy = null,
         string? oldValue = null,
         string? newValue = null,
-        string? note = null)
+        string? note = null,
+        bool isInternal = false)
     {
         return new ActivityLog
         {
@@ -36,6 +38,7 @@ public class ActivityLog
             NewValue = newValue,
             Note = note,
             PerformedBy = performedBy,
+            IsInternal = isInternal,
             PerformedAt = DateTime.UtcNow
         };
     }

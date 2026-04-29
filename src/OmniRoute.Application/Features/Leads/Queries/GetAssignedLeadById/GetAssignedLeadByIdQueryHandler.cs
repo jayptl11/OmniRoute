@@ -49,10 +49,11 @@ internal sealed class GetAssignedLeadByIdQueryHandler
         }
 
         // Lấy activity log timeline (chronological) — bao gồm STATUS_CHANGED và CONSULTATION_NOTE
+        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho SA
         var activityLogs = await _db.ActivityLogs
             .AsNoTracking()
             .Include(al => al.PerformedByUser)
-            .Where(al => al.EntityType == "LEAD" && al.EntityId == lead.Id)
+            .Where(al => al.EntityType == "LEAD" && al.EntityId == lead.Id && !al.IsInternal)
             .OrderBy(al => al.PerformedAt)
             .Select(al => new ActivityLogItemDto(
                 al.Id,
