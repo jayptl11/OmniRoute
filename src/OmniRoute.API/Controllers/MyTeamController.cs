@@ -6,6 +6,7 @@ using OmniRoute.Application.Features.Teams.Commands.RemoveTeamMember;
 using OmniRoute.Application.Features.Teams.DTOs;
 using OmniRoute.Application.Features.Teams.Queries.GetMemberPerformance;
 using OmniRoute.Application.Features.Teams.Queries.GetTeamMembers;
+using OmniRoute.Application.Features.Teams.Queries.SearchAddableUsers;
 using OmniRoute.Application.Features.Tickets.Commands.AddInternalNote;
 
 namespace OmniRoute.API.Controllers;
@@ -18,6 +19,18 @@ public sealed class MyTeamController : ControllerBase
     private readonly ISender _sender;
 
     public MyTeamController(ISender sender) => _sender = sender;
+
+    /// <summary>TN-11 helper — Tìm kiếm user để thêm vào đội (theo tên hoặc username).</summary>
+    [HttpGet("members/search")]
+    [ProducesResponseType(typeof(List<AddableUserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SearchAddableUsers([FromQuery] string? q, CancellationToken ct)
+    {
+        var result = await _sender.Send(new SearchAddableUsersQuery(q), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        return Ok(result.Value);
+    }
 
     /// <summary>TN-10 — Xem danh sách thành viên trong đội của TN hiện tại</summary>
     [HttpGet("members")]
