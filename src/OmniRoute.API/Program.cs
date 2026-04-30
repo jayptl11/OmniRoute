@@ -30,11 +30,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-            .SetIsOriginAllowed(_ => true)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
     options.AddPolicy("AllowAll", policy =>
     {
@@ -89,6 +88,9 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseMiddleware<TokenBlacklistMiddleware>();
@@ -104,4 +106,3 @@ app.Run();
 public partial class Program
 {
 }
-
