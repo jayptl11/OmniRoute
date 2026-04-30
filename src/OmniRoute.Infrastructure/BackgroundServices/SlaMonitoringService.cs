@@ -49,6 +49,7 @@ public sealed class SlaMonitoringService : BackgroundService
             var leadRepository = scope.ServiceProvider.GetRequiredService<ILeadRepository>();
             var slaConfigRepository = scope.ServiceProvider.GetRequiredService<ISlaConfigRepository>();
             var notificationRepository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+            var notificationConfigRepository = scope.ServiceProvider.GetRequiredService<INotificationConfigRepository>();
 
             var leads = await leadRepository.GetActiveLeadsForSlaMonitoringAsync(ct);
             if (leads.Count == 0) return;
@@ -69,7 +70,7 @@ public sealed class SlaMonitoringService : BackgroundService
 
                     _logger.LogWarning("SLA violated for lead {LeadCode} (deadline: {Deadline})", lead.LeadCode, lead.SlaDeadline);
 
-                    await NotifyLeadUsersAsync(context, notificationRepository, lead,
+                    await NotifyLeadUsersAsync(context, notificationRepository, notificationConfigRepository, lead,
                         "SLA_VIOLATED",
                         $"Vi phạm SLA: {lead.LeadCode}",
                         $"Lead {lead.LeadCode} - {lead.CustomerName} đã vượt quá thời hạn SLA ({lead.SlaDeadline:dd/MM/yyyy HH:mm}).",
@@ -92,7 +93,7 @@ public sealed class SlaMonitoringService : BackgroundService
 
                         _logger.LogInformation("SLA warning sent for lead {LeadCode}", lead.LeadCode);
 
-                        await NotifyLeadUsersAsync(context, notificationRepository, lead,
+                        await NotifyLeadUsersAsync(context, notificationRepository, notificationConfigRepository, lead,
                             "SLA_WARNING",
                             $"Cảnh báo SLA sắp hết hạn: {lead.LeadCode}",
                             $"Lead {lead.LeadCode} - {lead.CustomerName} sẽ vi phạm SLA lúc {lead.SlaDeadline:dd/MM/yyyy HH:mm}.",
@@ -153,18 +154,19 @@ public sealed class SlaMonitoringService : BackgroundService
     }
 
     // -----------------------------------------------------------------------
-    // Notify assigned user + all TN-role users
+    // Notify assigned user + role-based recipients from NotificationConfig
     // -----------------------------------------------------------------------
     private static async Task NotifyLeadUsersAsync(
         AppDbContext context,
         INotificationRepository notificationRepository,
+        INotificationConfigRepository notificationConfigRepository,
         Lead lead,
         string notificationType,
         string title,
         string body,
         CancellationToken ct)
     {
-        // Notify assigned user
+        // Always notify the directly assigned user
         if (lead.AssignedUserId.HasValue)
         {
             var notification = Notification.Create(
@@ -177,15 +179,21 @@ public sealed class SlaMonitoringService : BackgroundService
             await notificationRepository.AddAsync(notification, ct);
         }
 
-        // Notify all TN (Trưởng nhóm) users
-        var tnUsers = await context.Users
+        // Notify roles configured in QT-12
+        var enabledRoles = await notificationConfigRepository.GetEnabledRolesForTypeAsync(notificationType, ct);
+        if (enabledRoles.Count == 0) return;
+
+        var roleUsers = await context.Users
             .Include(u => u.Role)
-            .Where(u => u.IsActive && u.Role != null && u.Role.RoleName == "TN")
+            .Where(u => u.IsActive && u.Role != null && enabledRoles.Contains(u.Role.RoleName))
             .Select(u => u.UserId)
             .ToListAsync(ct);
 
-        foreach (var userId in tnUsers)
+        foreach (var userId in roleUsers)
         {
+            // Skip if this user already received the direct notification above
+            if (userId == lead.AssignedUserId) continue;
+
             var notification = Notification.Create(
                 userId: userId,
                 type: notificationType,

@@ -9,6 +9,7 @@ public class FollowUpTask
     public string Note { get; private set; } = string.Empty;
     public bool IsCompleted { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+    public DateTime? NotificationSentAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     // Navigation
@@ -36,4 +37,6 @@ public class FollowUpTask
         IsCompleted = true;
         CompletedAt = DateTime.UtcNow;
     }
+
+    public void MarkNotificationSent() => NotificationSentAt = DateTime.UtcNow;
 }

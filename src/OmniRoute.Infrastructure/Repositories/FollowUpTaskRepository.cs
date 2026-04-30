@@ -21,4 +21,12 @@ internal sealed class FollowUpTaskRepository : IFollowUpTaskRepository
         => await _context.FollowUpTasks
             .Where(t => t.UserId == userId)
             .ToListAsync(ct);
+
+    public async Task<List<FollowUpTask>> GetPendingForNotificationAsync(DateTime notifyBefore, CancellationToken ct = default)
+        => await _context.FollowUpTasks
+            .Where(t => !t.IsCompleted
+                && t.NotificationSentAt == null
+                && t.DueAt <= notifyBefore)
+            .Include(t => t.Lead)
+            .ToListAsync(ct);
 }

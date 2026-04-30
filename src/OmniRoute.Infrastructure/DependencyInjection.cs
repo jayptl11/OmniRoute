@@ -5,7 +5,8 @@ using OmniRoute.Infrastructure.BackgroundServices;
 using OmniRoute.Infrastructure.Persistence;
 using OmniRoute.Infrastructure.Repositories;
 using OmniRoute.Infrastructure.Services;
-using OmniRoute.Infrastructure.Settings;using Microsoft.AspNetCore.Authentication.JwtBearer;
+using OmniRoute.Infrastructure.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IMasterDataRepository, MasterDataRepository>();
         services.AddScoped<IFollowUpTaskRepository, FollowUpTaskRepository>();
+        services.AddScoped<INotificationConfigRepository, NotificationConfigRepository>();
 
         // Routing engine
         services.AddScoped<IRoutingEngine, RoutingEngine>();
@@ -89,11 +91,25 @@ public static class DependencyInjection
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(jwtSettings?.SecretKey ?? string.Empty))
             };
+
+            // Allow SignalR WebSocket connections to pass the token via query string
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        context.Token = accessToken;
+                    return Task.CompletedTask;
+                }
+            };
         });
 
         services.AddLogging(builder => builder.AddConsole());
         services.AddHostedService<TokenBlacklistCleanupService>();
         services.AddHostedService<SlaMonitoringService>();
+        services.AddHostedService<FollowUpDueMonitoringService>();
         return services;
     }
 }

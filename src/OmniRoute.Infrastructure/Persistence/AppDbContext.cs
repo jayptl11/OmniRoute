@@ -32,6 +32,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
     public DbSet<FollowUpTask> FollowUpTasks => Set<FollowUpTask>();
+    public DbSet<NotificationConfig> NotificationConfigs => Set<NotificationConfig>();
 
     public void SetAuditUserId(Guid userId)
     {

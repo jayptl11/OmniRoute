@@ -1,6 +1,7 @@
 ﻿using OmniRoute.API.Middleware;
 using OmniRoute.Application;
 using OmniRoute.Infrastructure;
+using OmniRoute.Infrastructure.Hubs;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,6 +37,8 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
+
+builder.Services.AddSignalR();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -87,6 +90,7 @@ app.UseMiddleware<BannedUserMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.Run();
