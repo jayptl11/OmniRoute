@@ -36,7 +36,7 @@ internal sealed class TestAiApiKeyCommandHandler : ICommandHandler<TestAiApiKeyC
         var sw = Stopwatch.StartNew();
         try
         {
-            var result = await _aiService.ClassifyWithKeyAsync(key.Provider, plainKey, "test ping", "Hotline", ct);
+            var result = await _aiService.ClassifyWithKeyAsync(key.Provider, plainKey, key.ConfigJson, "test ping", "Hotline", ct);
             sw.Stop();
 
             key.RecordSuccess();

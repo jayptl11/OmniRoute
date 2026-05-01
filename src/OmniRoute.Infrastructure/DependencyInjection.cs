@@ -79,6 +79,11 @@ public static class DependencyInjection
             var timeout = sp.GetRequiredService<IOptions<AiSettings>>().Value.TimeoutSeconds;
             client.Timeout = TimeSpan.FromSeconds(timeout);
         });
+        services.AddHttpClient("Groq").ConfigureHttpClient((sp, client) =>
+        {
+            var timeout = sp.GetRequiredService<IOptions<AiSettings>>().Value.TimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+        });
 
         // Report export
         services.AddScoped<IReportExportService, ReportExportService>();

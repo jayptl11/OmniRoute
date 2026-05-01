@@ -6,4 +6,5 @@ public record UpdateAiApiKeyCommand(
     Guid Id,
     string DisplayName,
     string? PlainKeyValue,   // null = keep existing
-    int Priority) : ICommand;
+    int Priority,
+    string ConfigJson) : ICommand;

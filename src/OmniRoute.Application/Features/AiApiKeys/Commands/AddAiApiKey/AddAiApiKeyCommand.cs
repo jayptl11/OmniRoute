@@ -6,4 +6,6 @@ public record AddAiApiKeyCommand(
     string Provider,
     string DisplayName,
     string PlainKeyValue,
-    int Priority) : ICommand<Guid>;
+    bool IsActive,
+    int Priority,
+    string ConfigJson) : ICommand<Guid>;

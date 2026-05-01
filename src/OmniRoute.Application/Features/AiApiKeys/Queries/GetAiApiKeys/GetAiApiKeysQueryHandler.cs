@@ -1,3 +1,4 @@
+using System.Text.Json;
 using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Interfaces;
@@ -24,6 +25,7 @@ internal sealed class GetAiApiKeysQueryHandler : IQueryHandler<GetAiApiKeysQuery
                 MaskKey(k.EncryptedKey),
                 k.Priority,
                 k.IsActive,
+                ParseConfig(k.ConfigJson),
                 k.FailureCount,
                 k.LastFailedAt,
                 k.LastUsedAt,
@@ -33,11 +35,16 @@ internal sealed class GetAiApiKeysQueryHandler : IQueryHandler<GetAiApiKeysQuery
         return Result<List<AiApiKeyDto>>.Success(dtos);
     }
 
-    // Show only last 4 chars of the encrypted key (safe for display — never decrypt for listing)
     private static string MaskKey(string encryptedKey)
     {
         if (encryptedKey.Length <= 4)
             return "****";
         return $"****{encryptedKey[^4..]}";
+    }
+
+    private static JsonElement ParseConfig(string configJson)
+    {
+        try { return JsonSerializer.Deserialize<JsonElement>(configJson); }
+        catch { return JsonSerializer.Deserialize<JsonElement>("{}"); }
     }
 }

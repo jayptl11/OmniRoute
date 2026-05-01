@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -38,8 +38,8 @@ internal sealed class AiClassificationService : IAiClassificationService
     }
 
     /// <summary>
-    /// Classifies the lead need using active API keys ordered by priority (primary first, then fallback).
-    /// Returns null only when all keys fail — caller should fall through to rule-based fallback.
+    /// Classifies the lead need using active API keys ordered by priority.
+    /// Returns null only when all keys fail â€” caller should fall through to rule-based fallback.
     /// </summary>
     public async Task<AiClassificationResult?> ClassifyAsync(
         string needDescription,
@@ -58,7 +58,8 @@ internal sealed class AiClassificationService : IAiClassificationService
             try
             {
                 var plainKey = _encryption.Decrypt(key.EncryptedKey);
-                var result = await CallProviderAsync(key.Provider, plainKey, needDescription, channel, ct);
+                var cfg = ParseConfig(key.ConfigJson);
+                var result = await CallProviderAsync(key.Provider, plainKey, cfg, needDescription, channel, ct);
 
                 key.RecordSuccess();
                 await _repository.UpdateAsync(key, ct);
@@ -84,11 +85,38 @@ internal sealed class AiClassificationService : IAiClassificationService
     public async Task<AiClassificationResult> ClassifyWithKeyAsync(
         string provider,
         string plainKey,
+        string configJson,
         string needDescription,
         string channel,
         CancellationToken ct = default)
     {
-        return await CallProviderAsync(provider, plainKey, needDescription, channel, ct);
+        var cfg = ParseConfig(configJson);
+        return await CallProviderAsync(provider, plainKey, cfg, needDescription, channel, ct);
+    }
+
+    // ------------------------------------------------------------------
+    // Config parsing
+    // ------------------------------------------------------------------
+
+    private sealed record ProviderConfig(string Model, double Temperature, int MaxTokens);
+
+    private static ProviderConfig ParseConfig(string configJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(configJson);
+            var root = doc.RootElement;
+
+            var model = root.TryGetProperty("model", out var m) ? m.GetString() ?? "gpt-4o-mini" : "gpt-4o-mini";
+            var temperature = root.TryGetProperty("temperature", out var t) ? t.GetDouble() : 0.0;
+            var maxTokens = root.TryGetProperty("maxTokens", out var mt) ? mt.GetInt32() : 200;
+
+            return new ProviderConfig(model, temperature, maxTokens);
+        }
+        catch
+        {
+            return new ProviderConfig("gpt-4o-mini", 0.0, 200);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -98,53 +126,58 @@ internal sealed class AiClassificationService : IAiClassificationService
     private Task<AiClassificationResult> CallProviderAsync(
         string provider,
         string plainKey,
+        ProviderConfig cfg,
         string needDescription,
         string channel,
         CancellationToken ct)
     {
         return provider switch
         {
-            "OpenAI" => CallOpenAiAsync(plainKey, needDescription, channel, ct),
-            "Gemini" => CallGeminiAsync(plainKey, needDescription, channel, ct),
-            "Anthropic" => CallAnthropicAsync(plainKey, needDescription, channel, ct),
-            _ => throw new NotSupportedException($"AI provider '{provider}' is not supported.")
+            "OpenAI"    => CallOpenAiCompatibleAsync("OpenAI",    "https://api.openai.com/v1/chat/completions",      plainKey, cfg, needDescription, channel, ct),
+            "Groq"      => CallOpenAiCompatibleAsync("Groq",      "https://api.groq.com/openai/v1/chat/completions", plainKey, cfg, needDescription, channel, ct),
+            "Gemini"    => CallGeminiAsync(plainKey, cfg, needDescription, channel, ct),
+            "Anthropic" => CallAnthropicAsync(plainKey, cfg, needDescription, channel, ct),
+            _           => throw new NotSupportedException($"AI provider '{provider}' is not supported.")
         };
     }
 
     // ------------------------------------------------------------------
-    // OpenAI
+    // OpenAI-compatible (OpenAI & Groq share the same Chat Completions format)
     // ------------------------------------------------------------------
 
-    private async Task<AiClassificationResult> CallOpenAiAsync(
+    private async Task<AiClassificationResult> CallOpenAiCompatibleAsync(
+        string providerName,
+        string apiUrl,
         string apiKey,
+        ProviderConfig cfg,
         string needDescription,
         string channel,
         CancellationToken ct)
     {
-        var client = _httpClientFactory.CreateClient("OpenAI");
+        var client = _httpClientFactory.CreateClient(providerName);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         var prompt = BuildClassificationPrompt(needDescription, channel);
         var requestBody = new
         {
-            model = "gpt-4o-mini",
+            model = cfg.Model,
             messages = new[]
             {
                 new { role = "system", content = "You are a Vietnamese customer service routing assistant. Respond only with valid JSON." },
                 new { role = "user", content = prompt }
             },
-            temperature = 0,
-            max_tokens = 200
+            temperature = cfg.Temperature,
+            max_tokens = cfg.MaxTokens
         };
 
-        var response = await PostJsonAsync(client, "https://api.openai.com/v1/chat/completions", requestBody, ct);
+        var response = await PostJsonAsync(client, apiUrl, requestBody, ct);
         var content = response
             .GetProperty("choices")[0]
             .GetProperty("message")
             .GetProperty("content")
             .GetString() ?? string.Empty;
 
-        return ParseClassificationResponse(content, "OpenAI");
+        return ParseClassificationResponse(content, providerName);
     }
 
     // ------------------------------------------------------------------
@@ -153,12 +186,13 @@ internal sealed class AiClassificationService : IAiClassificationService
 
     private async Task<AiClassificationResult> CallGeminiAsync(
         string apiKey,
+        ProviderConfig cfg,
         string needDescription,
         string channel,
         CancellationToken ct)
     {
         var client = _httpClientFactory.CreateClient("Gemini");
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/{cfg.Model}:generateContent?key={apiKey}";
 
         var prompt = BuildClassificationPrompt(needDescription, channel);
         var requestBody = new
@@ -173,7 +207,7 @@ internal sealed class AiClassificationService : IAiClassificationService
                     }
                 }
             },
-            generationConfig = new { temperature = 0, maxOutputTokens = 200 }
+            generationConfig = new { temperature = cfg.Temperature, maxOutputTokens = cfg.MaxTokens }
         };
 
         var response = await PostJsonAsync(client, url, requestBody, ct);
@@ -193,6 +227,7 @@ internal sealed class AiClassificationService : IAiClassificationService
 
     private async Task<AiClassificationResult> CallAnthropicAsync(
         string apiKey,
+        ProviderConfig cfg,
         string needDescription,
         string channel,
         CancellationToken ct)
@@ -204,8 +239,9 @@ internal sealed class AiClassificationService : IAiClassificationService
         var prompt = BuildClassificationPrompt(needDescription, channel);
         var requestBody = new
         {
-            model = "claude-3-haiku-20240307",
-            max_tokens = 200,
+            model = cfg.Model,
+            max_tokens = cfg.MaxTokens,
+            temperature = cfg.Temperature,
             messages = new[]
             {
                 new { role = "user", content = "You are a Vietnamese customer service routing assistant. Respond only with valid JSON.\n\n" + prompt }
@@ -229,21 +265,21 @@ internal sealed class AiClassificationService : IAiClassificationService
     {
         var jsonExample = """{"needType":"<value>","confidence":<0.0-1.0>,"reasoning":"<brief reason in Vietnamese>"}""";
         return $"""
-            Phân loại nhu cầu khách hàng dựa trên nội dung sau.
-            Kênh: {channel}
-            Nội dung: {needDescription}
+            PhÃ¢n loáº¡i nhu cáº§u khÃ¡ch hÃ ng dá»±a trÃªn ná»™i dung sau.
+            KÃªnh: {channel}
+            Ná»™i dung: {needDescription}
 
-            Phân loại vào một trong các nhóm sau:
-            - SaleNew: Mua hàng mới, hỏi giá, đăng ký, lắp đặt
-            - SaleUpgrade: Nâng cấp gói/thiết bị
-            - SaleRenew: Gia hạn hợp đồng
-            - CskhSupport: Hỗ trợ sau bán, hướng dẫn sử dụng
-            - CskhComplaint: Khiếu nại, phàn nàn dịch vụ
-            - CskhWarranty: Bảo hành, sửa chữa
-            - StoreVisit: Yêu cầu đến cửa hàng trực tiếp
-            - Other: Không xác định được
+            PhÃ¢n loáº¡i vÃ o má»™t trong cÃ¡c nhÃ³m sau:
+            - SaleNew: Mua hÃ ng má»›i, há»i giÃ¡, Ä‘Äƒng kÃ½, láº¯p Ä‘áº·t
+            - SaleUpgrade: NÃ¢ng cáº¥p gÃ³i/thiáº¿t bá»‹
+            - SaleRenew: Gia háº¡n há»£p Ä‘á»“ng
+            - CskhSupport: Há»— trá»£ sau bÃ¡n, hÆ°á»›ng dáº«n sá»­ dá»¥ng
+            - CskhComplaint: Khiáº¿u náº¡i, phÃ n nÃ n dá»‹ch vá»¥
+            - CskhWarranty: Báº£o hÃ nh, sá»­a chá»¯a
+            - StoreVisit: YÃªu cáº§u Ä‘áº¿n cá»­a hÃ ng trá»±c tiáº¿p
+            - Other: KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c
 
-            Trả lời đúng định dạng JSON sau, không kèm text ngoài:
+            Tráº£ lá»i Ä‘Ãºng Ä‘á»‹nh dáº¡ng JSON sau, khÃ´ng kÃ¨m text ngoÃ i:
             {jsonExample}
             """;
     }
@@ -266,7 +302,6 @@ internal sealed class AiClassificationService : IAiClassificationService
 
     private static AiClassificationResult ParseClassificationResponse(string raw, string provider)
     {
-        // Strip potential markdown fences
         var json = raw.Trim();
         if (json.StartsWith("```"))
         {

@@ -24,6 +24,11 @@ internal sealed class AiApiKeyConfiguration : IEntityTypeConfiguration<AiApiKey>
             .HasMaxLength(1000)
             .IsRequired();
 
+        builder.Property(k => k.ConfigJson)
+            .HasColumnType("nvarchar(max)")
+            .IsRequired()
+            .HasDefaultValue("{}");
+
         builder.Property(k => k.Priority)
             .IsRequired();
 

@@ -19,6 +19,7 @@ public interface IAiClassificationService
     Task<AiClassificationResult> ClassifyWithKeyAsync(
         string provider,
         string plainKey,
+        string configJson,
         string needDescription,
         string channel,
         CancellationToken ct = default);

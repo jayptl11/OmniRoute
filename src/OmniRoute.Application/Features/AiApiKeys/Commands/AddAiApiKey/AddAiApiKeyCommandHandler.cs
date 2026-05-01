@@ -30,7 +30,9 @@ internal sealed class AddAiApiKeyCommandHandler : ICommandHandler<AddAiApiKeyCom
             command.Provider,
             command.DisplayName,
             encryptedKey,
-            command.Priority);
+            command.ConfigJson,
+            command.Priority,
+            command.IsActive);
 
         await _repository.AddAsync(key, ct);
         await _db.SaveChangesAsync(ct);

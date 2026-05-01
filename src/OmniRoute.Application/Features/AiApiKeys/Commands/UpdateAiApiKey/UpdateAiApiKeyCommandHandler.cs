@@ -30,11 +30,11 @@ internal sealed class UpdateAiApiKeyCommandHandler : ICommandHandler<UpdateAiApi
         if (command.PlainKeyValue is not null)
         {
             var encryptedKey = _encryption.Encrypt(command.PlainKeyValue);
-            key.UpdateKey(encryptedKey, command.DisplayName, command.Priority);
+            key.UpdateKey(encryptedKey, command.DisplayName, command.ConfigJson, command.Priority);
         }
         else
         {
-            key.UpdateMeta(command.DisplayName, command.Priority);
+            key.UpdateMeta(command.DisplayName, command.ConfigJson, command.Priority);
         }
 
         await _repository.UpdateAsync(key, ct);
