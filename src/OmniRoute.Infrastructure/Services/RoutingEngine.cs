@@ -1,10 +1,13 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Domain.Entities;
 using OmniRoute.Domain.Enums;
 using OmniRoute.Domain.Interfaces;
 using OmniRoute.Infrastructure.Persistence;
+using OmniRoute.Infrastructure.Settings;
 
 namespace OmniRoute.Infrastructure.Services;
 
@@ -20,6 +23,9 @@ internal sealed class RoutingEngine : IRoutingEngine
     private readonly ISlaConfigRepository _slaConfigRepository;
     private readonly IActivityLogRepository _activityLogRepository;
     private readonly INotificationRepository _notificationRepository;
+    private readonly IAiClassificationService _aiClassification;
+    private readonly IOptions<AiSettings> _aiSettings;
+    private readonly ILogger<RoutingEngine> _logger;
 
     public RoutingEngine(
         AppDbContext context,
@@ -27,7 +33,10 @@ internal sealed class RoutingEngine : IRoutingEngine
         IRoutingRuleRepository routingRuleRepository,
         ISlaConfigRepository slaConfigRepository,
         IActivityLogRepository activityLogRepository,
-        INotificationRepository notificationRepository)
+        INotificationRepository notificationRepository,
+        IAiClassificationService aiClassification,
+        IOptions<AiSettings> aiSettings,
+        ILogger<RoutingEngine> logger)
     {
         _context = context;
         _leadRepository = leadRepository;
@@ -35,6 +44,9 @@ internal sealed class RoutingEngine : IRoutingEngine
         _slaConfigRepository = slaConfigRepository;
         _activityLogRepository = activityLogRepository;
         _notificationRepository = notificationRepository;
+        _aiClassification = aiClassification;
+        _aiSettings = aiSettings;
+        _logger = logger;
     }
 
     public async Task ProcessAsync(Guid leadId, CancellationToken ct = default)
@@ -67,14 +79,52 @@ internal sealed class RoutingEngine : IRoutingEngine
             if (!RuleMatchesChannel(rule, lead.Channel)) continue;
             if (!RuleMatchesKeywords(rule, lead.NeedDescription)) continue;
 
-            // First matching rule wins
+            // Layer 1 rule matched — no need for AI
             var needType = MapGroupToDefaultNeedType(rule.ActionGroup);
             return (rule.ActionGroup, needType);
         }
 
-        // No rule matched → default group = SALE
-        return (AssignedGroup.Sale, NeedType.Other);
+        // Layer 1 found no match — try Layer 2 (AI classification)
+        if (!string.IsNullOrWhiteSpace(lead.NeedDescription))
+        {
+            try
+            {
+                var aiResult = await _aiClassification.ClassifyAsync(
+                    lead.NeedDescription,
+                    lead.Channel.ToString(),
+                    ct);
+
+                if (aiResult is not null && aiResult.ConfidenceScore >= _aiSettings.Value.ConfidenceThreshold)
+                {
+                    _logger.LogInformation(
+                        "AI classified lead {LeadId} as {NeedType} (confidence {Score:F2}, provider {Provider})",
+                        lead.Id, aiResult.NeedType, aiResult.ConfidenceScore, aiResult.UsedProvider);
+
+                    var aiGroup = MapNeedTypeToGroup(aiResult.NeedType);
+                    return (aiGroup, aiResult.NeedType);
+                }
+
+                _logger.LogInformation(
+                    "AI classification confidence {Score:F2} below threshold {Threshold:F2} for lead {LeadId}. Falling back to DP.",
+                    aiResult?.ConfidenceScore ?? 0, _aiSettings.Value.ConfidenceThreshold, lead.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "AI classification failed for lead {LeadId}. Falling back.", lead.Id);
+            }
+        }
+
+        // No rule matched and AI insufficient → send to DP dispatch queue
+        return (AssignedGroup.StoreSupport, NeedType.Other);
     }
+
+    private static AssignedGroup MapNeedTypeToGroup(NeedType needType) => needType switch
+    {
+        NeedType.SaleNew or NeedType.SaleUpgrade or NeedType.SaleRenew => AssignedGroup.Sale,
+        NeedType.CskhSupport or NeedType.CskhComplaint or NeedType.CskhWarranty => AssignedGroup.Cskh,
+        NeedType.StoreVisit => AssignedGroup.StoreSupport,
+        _ => AssignedGroup.StoreSupport  // fallback to DP
+    };
 
     private static bool RuleMatchesChannel(RoutingRule rule, Channel channel)
     {

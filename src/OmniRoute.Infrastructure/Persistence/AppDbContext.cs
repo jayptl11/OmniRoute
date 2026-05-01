@@ -33,6 +33,7 @@ public class AppDbContext : DbContext, IApplicationDbContext
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
     public DbSet<FollowUpTask> FollowUpTasks => Set<FollowUpTask>();
     public DbSet<NotificationConfig> NotificationConfigs => Set<NotificationConfig>();
+    public DbSet<AiApiKey> AiApiKeys => Set<AiApiKey>();
 
     public void SetAuditUserId(Guid userId)
     {

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 
@@ -56,6 +57,28 @@ public static class DependencyInjection
 
         // Routing engine
         services.AddScoped<IRoutingEngine, RoutingEngine>();
+
+        // AI classification
+        services.Configure<AiSettings>(configuration.GetSection(AiSettings.SectionName));
+        services.AddScoped<IAiKeyEncryptionService, AiKeyEncryptionService>();
+        services.AddScoped<IAiApiKeyRepository, AiApiKeyRepository>();
+        services.AddScoped<IAiClassificationService, AiClassificationService>();
+
+        services.AddHttpClient("OpenAI").ConfigureHttpClient((sp, client) =>
+        {
+            var timeout = sp.GetRequiredService<IOptions<AiSettings>>().Value.TimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+        });
+        services.AddHttpClient("Gemini").ConfigureHttpClient((sp, client) =>
+        {
+            var timeout = sp.GetRequiredService<IOptions<AiSettings>>().Value.TimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+        });
+        services.AddHttpClient("Anthropic").ConfigureHttpClient((sp, client) =>
+        {
+            var timeout = sp.GetRequiredService<IOptions<AiSettings>>().Value.TimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+        });
 
         // Report export
         services.AddScoped<IReportExportService, ReportExportService>();

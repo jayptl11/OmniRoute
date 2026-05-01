@@ -23,6 +23,7 @@ namespace OmniRoute.Application.Common.Interfaces
         DbSet<MasterDataItem> MasterDataItems { get; }
         DbSet<FollowUpTask> FollowUpTasks { get; }
         DbSet<NotificationConfig> NotificationConfigs { get; }
+        DbSet<AiApiKey> AiApiKeys { get; }
 
         void SetAuditUserId(Guid userId);
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
