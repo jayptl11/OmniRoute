@@ -57,6 +57,9 @@ public static class DependencyInjection
         // Routing engine
         services.AddScoped<IRoutingEngine, RoutingEngine>();
 
+        // Report export
+        services.AddScoped<IReportExportService, ReportExportService>();
+
         var redisConnectionString = configuration["Redis:ConnectionString"];
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
