@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OmniRoute.Application.Features.AiApiKeys.Commands.AddAiApiKey;
 using OmniRoute.Application.Features.AiApiKeys.Commands.TestAiApiKey;
+using OmniRoute.Application.Features.AiApiKeys.Commands.TestLeadClassification;
 using OmniRoute.Application.Features.AiApiKeys.Commands.ToggleAiApiKeyStatus;
 using OmniRoute.Application.Features.AiApiKeys.Commands.UpdateAiApiKey;
 using OmniRoute.Application.Features.AiApiKeys.Queries.GetAiApiKeys;
@@ -96,6 +97,25 @@ public sealed class AiApiKeysController : ControllerBase
 
         return Ok(result.Value);
     }
+
+    /// <summary>Test lead classification using a specific AI API key without creating a lead.</summary>
+    [HttpPost("{id:guid}/test-classification")]
+    [ProducesResponseType(typeof(TestLeadClassificationResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> TestClassification(
+        Guid id, [FromBody] TestLeadClassificationRequest request, CancellationToken ct)
+    {
+        var command = new TestLeadClassificationCommand(id, request.NeedDescription, request.Channel);
+        var result = await _sender.Send(command, ct);
+
+        if (result.IsFailure)
+            return result.ErrorCode == "NOT_FOUND"
+                ? NotFound(result.ErrorMessage)
+                : BadRequest(new { result.ErrorCode, result.ErrorMessage });
+
+        return Ok(result.Value);
+    }
 }
 
 /// <summary>Request body for POST /api/ai-api-keys</summary>
@@ -113,4 +133,9 @@ public record UpdateAiApiKeyRequest(
     string? PlainKeyValue,
     int Priority,
     JsonElement Config);
+
+/// <summary>Request body for POST /api/ai-api-keys/{id}/test-classification</summary>
+public record TestLeadClassificationRequest(
+    string NeedDescription,
+    string Channel);
 
