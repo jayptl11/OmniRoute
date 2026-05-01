@@ -139,12 +139,9 @@ public sealed class SlaMonitoringService : BackgroundService
                       : waitMinutes > 15 ? 2
                       : 0;
 
-        // Re-use stored base score (channel + need + history) by subtracting previous waittime
-        // Since we don't store components separately, we clamp the updated total to [0, 100]
-        // and preserve the existing score minus previous waittime contribution then add new one.
-        // As a safe fallback: bump the score by the new waittime delta relative to 0-baseline.
-        int baseScore = lead.PriorityScore; // already includes previous wWaittime
-        int newScore = Math.Clamp(baseScore + wWaittime, 0, 100);
+        // BasePriorityScore = W_channel + W_need + W_history (frozen at classification, no W_waittime).
+        // Add current W_waittime on top each cycle — replaces previous contribution, never accumulates.
+        int newScore = Math.Clamp(lead.BasePriorityScore + wWaittime, 0, 100);
 
         var newLevel = newScore >= 70 ? PriorityLevel.High
                      : newScore >= 40 ? PriorityLevel.Medium

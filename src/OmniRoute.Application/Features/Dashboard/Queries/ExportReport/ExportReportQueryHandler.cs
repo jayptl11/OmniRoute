@@ -28,6 +28,10 @@ internal sealed class ExportReportQueryHandler
             return Result<ExportReportResult>.Failure(
                 "INVALID_REPORT_TYPE", "reportType phải là: overview, unitComparison hoặc sales.");
 
+        if (query.Format is not ("excel" or "pdf"))
+            return Result<ExportReportResult>.Failure(
+                "INVALID_FORMAT", "format phải là: excel hoặc pdf.");
+
         object data;
         string reportLabel;
 
@@ -63,6 +67,14 @@ internal sealed class ExportReportQueryHandler
                 reportLabel = "SalesReport";
                 break;
             }
+        }
+
+        if (query.Format == "pdf")
+        {
+            var pdfBytes = _exportService.ExportToPdf(query.ReportType, data);
+            var pdfFileName = $"{reportLabel}_{query.Period}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+            return Result<ExportReportResult>.Success(
+                new ExportReportResult(pdfBytes, "application/pdf", pdfFileName));
         }
 
         var fileBytes = _exportService.ExportToExcel(query.ReportType, data);

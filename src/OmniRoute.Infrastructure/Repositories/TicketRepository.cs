@@ -63,6 +63,7 @@ internal sealed class TicketRepository : ITicketRepository
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(x =>
                 x.CustomerPhone == search ||
+                x.TicketCode == search ||
                 x.CustomerName.Contains(search));
 
         if (!string.IsNullOrWhiteSpace(status) &&

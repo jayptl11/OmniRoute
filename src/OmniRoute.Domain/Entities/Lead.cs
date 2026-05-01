@@ -21,6 +21,9 @@ public class Lead
 
     // Scoring & priority
     public int PriorityScore { get; private set; }
+    /// <summary>Score at classification time (W_channel + W_need + W_history), excludes W_waittime.
+    /// Used by SlaMonitoringService to recalculate score without accumulation each cycle.</summary>
+    public int BasePriorityScore { get; private set; }
     public PriorityLevel? PriorityLevel { get; private set; }
     public RoutingType RoutingType { get; private set; }
 
@@ -85,6 +88,7 @@ public class Lead
     {
         NeedType = needType;
         PriorityScore = priorityScore;
+        BasePriorityScore = priorityScore; // freeze base — W_waittime not yet applied at classification
         PriorityLevel = priorityLevel;
         AssignedGroup = assignedGroup;
         UpdatedAt = DateTime.UtcNow;

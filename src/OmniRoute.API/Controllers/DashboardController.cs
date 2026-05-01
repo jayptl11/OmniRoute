@@ -105,7 +105,7 @@ public sealed class DashboardController : ControllerBase
         return Ok(result.Value);
     }
 
-    /// <summary>BQL-06 — Xuất báo cáo theo kỳ ra file Excel. reportType: overview | unitComparison | sales.</summary>
+    /// <summary>BQL-06 — Xuất báo cáo theo kỳ. reportType: overview | unitComparison | sales. format: excel (mặc định) | pdf.</summary>
     [HttpGet("export")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -114,9 +114,10 @@ public sealed class DashboardController : ControllerBase
         [FromQuery] string period = "month",
         [FromQuery] DateTime? dateFrom = null,
         [FromQuery] DateTime? dateTo = null,
+        [FromQuery] string format = "excel",
         CancellationToken ct = default)
     {
-        var result = await _sender.Send(new ExportReportQuery(reportType, period, dateFrom, dateTo), ct);
+        var result = await _sender.Send(new ExportReportQuery(reportType, period, dateFrom, dateTo, format), ct);
         if (!result.IsSuccess)
             return BadRequest(new { result.ErrorCode, result.ErrorMessage });
 
