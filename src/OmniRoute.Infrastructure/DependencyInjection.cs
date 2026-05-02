@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Resend;
 using StackExchange.Redis;
 
 namespace OmniRoute.Infrastructure;
@@ -30,6 +31,12 @@ public static class DependencyInjection
             provider.GetRequiredService<AppDbContext>());
 
         services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        services.AddHttpClient<ResendClient>();
+        services.Configure<ResendClientOptions>(o =>
+        {
+            o.ApiToken = configuration["EmailSettings:ResendApiKey"] ?? string.Empty;
+        });
+        services.AddTransient<IResend, ResendClient>();
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<GoogleAuthSettings>(configuration.GetSection(GoogleAuthSettings.SectionName));
 
