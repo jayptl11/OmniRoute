@@ -14,7 +14,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("CanCreateLead",      p => p.RequireRole("TV"));
-    options.AddPolicy("CanProcessLead",     p => p.RequireRole("SA"));
+    options.AddPolicy("CanProcessLead",     p => p.RequireRole("SA", "SS"));
     options.AddPolicy("CanProcessTicket",   p => p.RequireRole("CS"));
     options.AddPolicy("CanDispatchToStore", p => p.RequireRole("DP"));
     options.AddPolicy("CanReassign",        p => p.RequireRole("TN", "QL"));

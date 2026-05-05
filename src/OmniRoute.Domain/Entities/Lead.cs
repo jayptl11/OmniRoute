@@ -123,6 +123,14 @@ public class Lead
         UpdatedAt = DateTime.UtcNow;
     }
 
+    // DP-04b: Sau khi dispatch về store, gán cụ thể cho SS ít việc nhất trong store đó
+    public void AssignUserAfterDispatch(Guid userId)
+    {
+        AssignedUserId = userId;
+        AssignedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void SetPendingAssignment()
     {
         Status = LeadStatus.PendingAssignment;

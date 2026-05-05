@@ -57,7 +57,8 @@ public class AppDbContext : DbContext, IApplicationDbContext
                 new Role { RoleId = Guid.Parse("55555555-5555-5555-5555-555555555555"), RoleName = "TN" },
                 new Role { RoleId = Guid.Parse("66666666-6666-6666-6666-666666666666"), RoleName = "QL" },
                 new Role { RoleId = Guid.Parse("77777777-7777-7777-7777-777777777777"), RoleName = "QT" },
-                new Role { RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), RoleName = "BQL" }
+                new Role { RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), RoleName = "BQL" },
+                new Role { RoleId = Guid.Parse("99999999-9999-9999-9999-999999999999"), RoleName = "SS" }
             );
         });
 

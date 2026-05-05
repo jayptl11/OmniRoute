@@ -8,7 +8,7 @@ namespace OmniRoute.Application.Features.StoreManagement.Commands.AssignStoreSta
 
 internal sealed class AssignStoreStaffCommandHandler : ICommandHandler<AssignStoreStaffCommand>
 {
-    private static readonly HashSet<string> AllowedRoles = ["SA", "CS"];
+    private static readonly HashSet<string> AllowedRoles = ["SS"];
 
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _currentUserService;
@@ -45,7 +45,7 @@ internal sealed class AssignStoreStaffCommandHandler : ICommandHandler<AssignSto
 
         if (userRole is null || !AllowedRoles.Contains(userRole))
             return Result.Failure("INVALID_ROLE",
-                $"Chỉ có thể thêm nhân viên với role SA hoặc CS vào đơn vị. Người dùng này có role '{userRole ?? "không xác định"}'.");
+                $"Chỉ có thể thêm nhân viên với role SS (Sale Cửa hàng) vào đơn vị. Người dùng này có role '{userRole ?? "không xác định"}'.");
 
         if (user.StoreId == storeId)
             return Result.Failure("ALREADY_IN_STORE", "Người dùng đã là nhân sự của đơn vị này.");

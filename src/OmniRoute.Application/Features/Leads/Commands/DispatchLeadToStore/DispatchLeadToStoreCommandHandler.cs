@@ -18,6 +18,7 @@ internal sealed class DispatchLeadToStoreCommandHandler
     private readonly INotificationRepository _notificationRepository;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IRoutingEngine _routingEngine;
 
     public DispatchLeadToStoreCommandHandler(
         ILeadRepository leadRepository,
@@ -26,7 +27,8 @@ internal sealed class DispatchLeadToStoreCommandHandler
         IActivityLogRepository activityLogRepository,
         INotificationRepository notificationRepository,
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IRoutingEngine routingEngine)
     {
         _leadRepository = leadRepository;
         _storeRepository = storeRepository;
@@ -35,6 +37,7 @@ internal sealed class DispatchLeadToStoreCommandHandler
         _notificationRepository = notificationRepository;
         _context = context;
         _currentUserService = currentUserService;
+        _routingEngine = routingEngine;
     }
 
     public async Task<Result<DispatchLeadToStoreResponse>> Handle(
@@ -65,6 +68,9 @@ internal sealed class DispatchLeadToStoreCommandHandler
         // Domain mutation — guard bên trong entity sẽ throw nếu trạng thái sai
         lead.DispatchToStore(command.StoreId, slaDeadline);
         await _leadRepository.UpdateAsync(lead, ct);
+
+        // Tự động gán cho SS ít việc nhất trong cửa hàng (nếu có)
+        await _routingEngine.AssignToStoreStaffAsync(lead.Id, command.StoreId, ct);
 
         // Ghi ActivityLog (DP-05 tích hợp: note tùy chọn)
         var log = ActivityLog.Create(

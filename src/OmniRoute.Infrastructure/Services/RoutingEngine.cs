@@ -298,6 +298,40 @@ internal sealed class RoutingEngine : IRoutingEngine
         }
     }
 
+    // DP-04b: Sau khi dispatch về store, tự gán SS ít việc nhất trong store đó (BR-02)
+    public async Task AssignToStoreStaffAsync(Guid leadId, Guid storeId, CancellationToken ct = default)
+    {
+        const int maxLeadsPerPerson = 20;
+
+        var lead = await _context.Leads.FirstOrDefaultAsync(l => l.Id == leadId, ct);
+        if (lead is null) return;
+
+        var candidate = await _context.Users
+            .Include(u => u.Role)
+            .Where(u => u.IsActive
+                        && u.Role != null
+                        && u.Role.RoleName == "SS"
+                        && u.StoreId == storeId
+                        && u.CurrentWorkload < maxLeadsPerPerson)
+            .OrderBy(u => u.CurrentWorkload)
+            .ThenBy(u => u.LastAssignedAt ?? DateTime.MinValue)
+            .FirstOrDefaultAsync(ct);
+
+        if (candidate is null) return; // Không có SS available — QL xử lý thủ công
+
+        lead.AssignUserAfterDispatch(candidate.UserId);
+        candidate.IncrementWorkload();
+
+        var notification = Notification.Create(
+            userId: candidate.UserId,
+            type: "LEAD_ASSIGNED",
+            title: $"Lead mới được phân công: {lead.LeadCode}",
+            body: $"Khách hàng {lead.CustomerName} ({lead.CustomerPhone}) đã được phân công cho bạn.",
+            entityType: "LEAD",
+            entityId: lead.Id);
+        await _notificationRepository.AddAsync(notification, ct);
+    }
+
     private async Task<User?> FindLeastLoadedUserAsync(string roleName, Guid? preferredStoreId, CancellationToken ct)
     {
         const int maxLeadsPerPerson = 20;

@@ -9,8 +9,8 @@ namespace OmniRoute.Application.Features.StoreManagement.Queries.SearchAddableSt
 internal sealed class SearchAddableStoreUsersQueryHandler
     : IQueryHandler<SearchAddableStoreUsersQuery, List<AddableStoreUserDto>>
 {
-    // QL có thể thêm nhân viên SA, CS vào đơn vị (DP là dispatcher trung tâm, không thuộc store)
-    private static readonly HashSet<string> AllowedRoles = ["SA", "CS"];
+    // QL chỉ có thể thêm nhân viên SS (Sale Cửa hàng) vào đơn vị
+    private static readonly HashSet<string> AllowedRoles = ["SS"];
 
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _currentUserService;
