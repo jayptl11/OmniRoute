@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+﻿﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -265,21 +265,21 @@ internal sealed class AiClassificationService : IAiClassificationService
     {
         var jsonExample = """{"needType":"<value>","confidence":<0.0-1.0>,"reasoning":"<brief reason in Vietnamese>"}""";
         return $"""
-            PhÃ¢n loáº¡i nhu cáº§u khÃ¡ch hÃ ng dá»±a trÃªn ná»™i dung sau.
-            KÃªnh: {channel}
-            Ná»™i dung: {needDescription}
+            Phân loại nhu cầu khách hàng dựa trên nội dung sau.
+            Kênh: {channel}
+            Nội dung: {needDescription}
 
-            PhÃ¢n loáº¡i vÃ o má»™t trong cÃ¡c nhÃ³m sau:
-            - SaleNew: Mua hÃ ng má»›i, há»i giÃ¡, Ä‘Äƒng kÃ½, láº¯p Ä‘áº·t
-            - SaleUpgrade: NÃ¢ng cáº¥p gÃ³i/thiáº¿t bá»‹
-            - SaleRenew: Gia háº¡n há»£p Ä‘á»“ng
-            - CskhSupport: Há»— trá»£ sau bÃ¡n, hÆ°á»›ng dáº«n sá»­ dá»¥ng
-            - CskhComplaint: Khiáº¿u náº¡i, phÃ n nÃ n dá»‹ch vá»¥
-            - CskhWarranty: Báº£o hÃ nh, sá»­a chá»¯a
-            - StoreVisit: YÃªu cáº§u Ä‘áº¿n cá»­a hÃ ng trá»±c tiáº¿p
-            - Other: KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c
+            Phân loại vào một trong các nhóm sau:
+            - SaleNew: Mua hàng mới, hỏi giá, đăng ký, lắp đặt
+            - SaleUpgrade: Nâng cấp gói/thiết bị
+            - SaleRenew: Gia hạn hợp đồng
+            - CskhSupport: Hỗ trợ sau bán, hướng dẫn sử dụng
+            - CskhComplaint: Khiếu nại, phàn nàn dịch vụ
+            - CskhWarranty: Bảo hành, sửa chữa
+            - StoreVisit: Yêu cầu đến cửa hàng trực tiếp
+            - Other: Không xác định được
 
-            Tráº£ lá»i Ä‘Ãºng Ä‘á»‹nh dáº¡ng JSON sau, khÃ´ng kÃ¨m text ngoÃ i:
+            Trả lời đúng định dạng JSON sau, không kèm text ngoài:
             {jsonExample}
             """;
     }
