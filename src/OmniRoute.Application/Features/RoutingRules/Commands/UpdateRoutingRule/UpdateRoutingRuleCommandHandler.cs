@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.RoutingRules.Commands.UpdateRoutingRule;
 
@@ -28,8 +29,9 @@ internal sealed class UpdateRoutingRuleCommandHandler : ICommandHandler<UpdateRo
             return Result.Failure("DUPLICATE_PRIORITY_ORDER",
                 $"Priority order {command.PriorityOrder} is already used by another rule.");
 
-        var channelJson = command.ConditionChannels is { Count: > 0 }
-            ? JsonSerializer.Serialize(command.ConditionChannels)
+        var normalizedChannels = RoutingRuleChannelHelper.NormalizeConditionChannels(command.ConditionChannels);
+        var channelJson = normalizedChannels is { Count: > 0 }
+            ? JsonSerializer.Serialize(normalizedChannels)
             : null;
 
         var keywordsJson = command.ConditionKeywords is { Count: > 0 }

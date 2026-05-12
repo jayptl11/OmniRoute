@@ -113,10 +113,10 @@ public class LoginWithGoogleCommandHandlerTests
         result.Value.Should().NotBeNull();
         users.Should().HaveCount(1);
         users[0].Email.Should().Be("new@gmail.com");
-        users[0].RoleId.Should().Be(studentRole.RoleId);
+        users[0].RoleId.Should().Be(defaultRole.RoleId);
         result.Value.AccessToken.Should().Be("jwt");
         result.Value.RefreshToken.Should().Be("rt");
-        result.Value.RoleName.Should().Be("Student");
+        result.Value.RoleName.Should().Be("TV");
 
         userProfiles.Should().HaveCount(1);
         userProfiles[0].UserId.Should().Be(users[0].UserId);

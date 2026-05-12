@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.RoutingRules.DTOs;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.RoutingRules.Queries.TestRoutingRule;
 
@@ -40,21 +41,13 @@ internal sealed class TestRoutingRuleQueryHandler : IQueryHandler<TestRoutingRul
             MatchedRuleId: null,
             MatchedRuleName: null,
             MatchedPriorityOrder: null,
-            ResultGroup: "Sale");
+            ResultGroup: "StoreSupport");
 
         return Result<TestRoutingRuleResultDto>.Success(noMatch);
     }
 
     private static bool ChannelMatches(string? conditionChannelJson, string? channel)
-    {
-        if (conditionChannelJson is null) return true;
-
-        var channels = JsonSerializer.Deserialize<List<string>>(conditionChannelJson);
-        if (channels is null || channels.Count == 0) return true;
-
-        return channel is not null &&
-               channels.Any(c => c.Equals(channel, StringComparison.OrdinalIgnoreCase));
-    }
+        => RoutingRuleChannelHelper.RuleMatchesRequestedChannel(conditionChannelJson, channel);
 
     private static bool KeywordsMatch(string? conditionKeywordsJson, string? needDescription)
     {

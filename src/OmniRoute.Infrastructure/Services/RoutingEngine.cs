@@ -6,6 +6,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Domain.Entities;
 using OmniRoute.Domain.Enums;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 using OmniRoute.Infrastructure.Persistence;
 using OmniRoute.Infrastructure.Settings;
 
@@ -127,14 +128,7 @@ internal sealed class RoutingEngine : IRoutingEngine
     };
 
     private static bool RuleMatchesChannel(RoutingRule rule, Channel channel)
-    {
-        if (rule.ConditionChannelJson is null) return true; // null = all channels
-
-        var channels = JsonSerializer.Deserialize<string[]>(rule.ConditionChannelJson);
-        if (channels is null || channels.Length == 0) return true;
-
-        return channels.Any(c => string.Equals(c, channel.ToString(), StringComparison.OrdinalIgnoreCase));
-    }
+        => RoutingRuleChannelHelper.RuleMatchesLeadChannel(rule.ConditionChannelJson, channel);
 
     private static bool RuleMatchesKeywords(RoutingRule rule, string needDescription)
     {
