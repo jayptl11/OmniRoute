@@ -5,6 +5,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetPendingDispatchLeadById;
 
@@ -19,19 +20,23 @@ internal sealed class GetPendingDispatchLeadByIdQueryHandler
         GetPendingDispatchLeadByIdQuery query,
         CancellationToken ct)
     {
-        // DP-02: Chỉ xem lead đang ở trạng thái PendingDispatch
+        // DP-02: Chỉ xem lead đang ở trạng thái PendingDispatch.
         var lead = await _db.Leads
             .AsNoTracking()
             .Where(l => l.Id == query.LeadId && l.Status == LeadStatus.PendingDispatch)
             .FirstOrDefaultAsync(ct);
 
         if (lead is null)
+        {
             return Result<PendingDispatchLeadDetailDto>.Failure(
                 "NOT_FOUND", "Lead không tồn tại hoặc không ở trạng thái chờ điều phối.");
+        }
 
         List<string>? productInterest = null;
         if (!string.IsNullOrEmpty(lead.ProductInterest))
+        {
             productInterest = JsonSerializer.Deserialize<List<string>>(lead.ProductInterest);
+        }
 
         var activityLogs = await _db.ActivityLogs
             .AsNoTracking()
@@ -59,7 +64,8 @@ internal sealed class GetPendingDispatchLeadByIdQueryHandler
             CustomerPhone: lead.CustomerPhone,
             CustomerAddress: lead.CustomerAddress,
             CustomerEmail: lead.CustomerEmail,
-            Channel: lead.Channel.ToString(),
+            Channel: RoutingRuleChannelHelper.GetCanonicalName(lead.Channel),
+            ChannelDisplayName: RoutingRuleChannelHelper.GetDisplayName(lead.Channel),
             NeedDescription: lead.NeedDescription,
             ProductInterest: productInterest,
             NeedType: lead.NeedType?.ToString(),

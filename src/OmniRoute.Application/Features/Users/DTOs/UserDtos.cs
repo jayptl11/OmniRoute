@@ -7,6 +7,7 @@ public record UserListItemDto(
     string? FirstName,
     string? LastName,
     string? RoleName,
+    string? RoleDisplayName,
     Guid? RoleId,
     Guid? StoreId,
     bool IsActive,

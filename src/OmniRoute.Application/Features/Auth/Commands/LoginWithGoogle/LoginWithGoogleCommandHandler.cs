@@ -1,10 +1,11 @@
-﻿using OmniRoute.Application.Common.Abstractions;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
-using MassTransit;
-using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.LoginWithGoogle;
 
@@ -28,7 +29,9 @@ internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithG
     {
         var googleUser = await _googleAuth.ValidateIdTokenAsync(request.IdToken, cancellationToken);
         if (googleUser == null)
+        {
             return Result<LoginResponse>.Failure("INVALID_GOOGLE_TOKEN", "Invalid Google token");
+        }
 
         var user = await _context.Users
             .Include(u => u.Role)
@@ -43,7 +46,7 @@ internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithG
             var finalUsername = await EnsureUniqueUsernameAsync(username, cancellationToken);
 
             var defaultRole = await _context.Roles
-                .FirstOrDefaultAsync(r => r.RoleName == "TV", cancellationToken);
+                .FirstOrDefaultAsync(r => r.RoleName == RoleCatalog.Consultant, cancellationToken);
 
             resolvedRoleId = defaultRole?.RoleId;
             resolvedRoleName = defaultRole?.RoleName;
@@ -78,7 +81,9 @@ internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithG
         }
 
         if (!user.IsActive)
+        {
             return Result<LoginResponse>.Failure("ACCOUNT_LOCKED", "Your account has been locked. Please contact support.");
+        }
 
         user.UpdateLastLogin(DateTime.UtcNow);
 
@@ -105,7 +110,8 @@ internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithG
             user.Username,
             user.LastLogin,
             resolvedRoleId,
-            resolvedRoleName
+            resolvedRoleName,
+            RoleCatalog.GetDisplayName(resolvedRoleName)
         ));
     }
 
@@ -123,4 +129,3 @@ internal sealed class LoginWithGoogleCommandHandler : ICommandHandler<LoginWithG
         return candidate;
     }
 }
-

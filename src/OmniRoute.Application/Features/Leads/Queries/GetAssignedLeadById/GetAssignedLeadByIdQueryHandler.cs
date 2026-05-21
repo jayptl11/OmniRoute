@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetAssignedLeadById;
 
@@ -25,7 +26,7 @@ internal sealed class GetAssignedLeadByIdQueryHandler
     {
         var currentUserId = _currentUserService.GetUserId();
 
-        // SA-02: Chỉ lấy lead được gán cho nhân viên hiện tại
+        // SA-02: Chỉ lấy lead được gán cho nhân viên hiện tại.
         var lead = await _db.Leads
             .AsNoTracking()
             .Include(l => l.AssignedUser)
@@ -33,11 +34,15 @@ internal sealed class GetAssignedLeadByIdQueryHandler
             .FirstOrDefaultAsync(ct);
 
         if (lead is null)
+        {
             return Result<SaleLeadDetailDto>.Failure("NOT_FOUND", "Lead không tồn tại hoặc chưa được gán cho bạn.");
+        }
 
         List<string>? productInterest = null;
         if (!string.IsNullOrEmpty(lead.ProductInterest))
+        {
             productInterest = JsonSerializer.Deserialize<List<string>>(lead.ProductInterest);
+        }
 
         string? assignedUserName = null;
         if (lead.AssignedUser is not null)
@@ -48,8 +53,8 @@ internal sealed class GetAssignedLeadByIdQueryHandler
                 : fullName;
         }
 
-        // Lấy activity log timeline (chronological) — bao gồm STATUS_CHANGED và CONSULTATION_NOTE
-        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho SA
+        // Lấy activity log timeline theo thứ tự thời gian.
+        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho SA.
         var activityLogs = await _db.ActivityLogs
             .AsNoTracking()
             .Include(al => al.PerformedByUser)
@@ -75,7 +80,8 @@ internal sealed class GetAssignedLeadByIdQueryHandler
             CustomerPhone: lead.CustomerPhone,
             CustomerAddress: lead.CustomerAddress,
             CustomerEmail: lead.CustomerEmail,
-            Channel: lead.Channel.ToString(),
+            Channel: RoutingRuleChannelHelper.GetCanonicalName(lead.Channel),
+            ChannelDisplayName: RoutingRuleChannelHelper.GetDisplayName(lead.Channel),
             NeedDescription: lead.NeedDescription,
             ProductInterest: productInterest,
             NeedType: lead.NeedType?.ToString(),

@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
+using OmniRoute.Domain.Constants;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetEscalateTargets;
 
@@ -10,7 +11,12 @@ internal sealed class GetEscalateTargetsQueryHandler
     : IQueryHandler<GetEscalateTargetsQuery, List<EscalateTargetDto>>
 {
     private static readonly HashSet<string> SearchRoles =
-        new(StringComparer.OrdinalIgnoreCase) { "TN", "QL", "QT" };
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            RoleCatalog.TeamLead,
+            RoleCatalog.StoreManager,
+            RoleCatalog.SystemAdmin
+        };
 
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUserService _currentUserService;
@@ -28,8 +34,8 @@ internal sealed class GetEscalateTargetsQueryHandler
         CancellationToken ct)
     {
         var currentUserId = _currentUserService.GetUserId();
-        var q = query.Q?.Trim();
-        var hasQuery = !string.IsNullOrEmpty(q);
+        var searchText = query.Q?.Trim();
+        var hasQuery = !string.IsNullOrEmpty(searchText);
 
         var targets = await _db.Users
             .AsNoTracking()
@@ -38,26 +44,34 @@ internal sealed class GetEscalateTargetsQueryHandler
                 u.IsActive &&
                 u.UserId != currentUserId &&
                 u.Role != null &&
-                // Không nhập → chỉ TN; có nhập → search TN/QL/QT
+                // Không nhập -> chỉ TN; có nhập -> search TN/QL/QT.
                 (hasQuery
                     ? SearchRoles.Contains(u.Role.RoleName)
-                    : u.Role.RoleName == "TN") &&
+                    : u.Role.RoleName == RoleCatalog.TeamLead) &&
                 (!hasQuery || (
-                    u.Username.Contains(q!) ||
-                    (u.FirstName + " " + u.LastName).Contains(q!) ||
-                    u.LastName.Contains(q!) ||
-                    u.FirstName.Contains(q!))))
+                    u.Username.Contains(searchText!) ||
+                    ((u.FirstName ?? string.Empty) + " " + (u.LastName ?? string.Empty)).Contains(searchText!) ||
+                    (u.LastName ?? string.Empty).Contains(searchText!) ||
+                    (u.FirstName ?? string.Empty).Contains(searchText!))))
             .OrderBy(u => u.Role!.RoleName)
             .ThenBy(u => u.LastName)
             .ThenBy(u => u.FirstName)
-            .Select(u => new EscalateTargetDto(
+            .Select(u => new
+            {
                 u.UserId,
-                ($"{u.FirstName} {u.LastName}".Trim() != string.Empty
-                    ? $"{u.FirstName} {u.LastName}".Trim()
+                FullName = ($"{u.FirstName ?? string.Empty} {u.LastName ?? string.Empty}".Trim() != string.Empty
+                    ? $"{u.FirstName ?? string.Empty} {u.LastName ?? string.Empty}".Trim()
                     : u.Username),
-                u.Role!.RoleName))
+                RoleName = u.Role!.RoleName
+            })
             .ToListAsync(ct);
 
-        return Result<List<EscalateTargetDto>>.Success(targets);
+        return Result<List<EscalateTargetDto>>.Success(
+            targets.Select(u => new EscalateTargetDto(
+                u.UserId,
+                u.FullName,
+                u.RoleName,
+                RoleCatalog.GetDisplayName(u.RoleName) ?? u.RoleName))
+            .ToList());
     }
 }

@@ -1,10 +1,11 @@
-﻿using OmniRoute.Application.Common.Abstractions;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
-using MassTransit;
-using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.Login;
 
@@ -33,13 +34,19 @@ internal sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginR
             .FirstOrDefaultAsync(u => u.Email == identifier || u.Username == identifier, cancellationToken);
 
         if (user == null)
+        {
             return Result<LoginResponse>.Failure("INVALID_CREDENTIALS", "Invalid username/email or password");
+        }
 
         if (!user.IsActive)
+        {
             return Result<LoginResponse>.Failure("ACCOUNT_LOCKED", "Your account has been locked. Please contact support.");
+        }
 
         if (!_passwordService.VerifyPassword(request.Password, user.PasswordHash))
+        {
             return Result<LoginResponse>.Failure("INVALID_CREDENTIALS", "Invalid username/email or password");
+        }
 
         var now = DateTime.UtcNow;
         user.UpdateLastLogin(now);
@@ -67,8 +74,8 @@ internal sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginR
             user.Username,
             user.LastLogin,
             user.RoleId,
-            user.Role?.RoleName
+            user.Role?.RoleName,
+            RoleCatalog.GetDisplayName(user.Role?.RoleName)
         ));
     }
 }
-

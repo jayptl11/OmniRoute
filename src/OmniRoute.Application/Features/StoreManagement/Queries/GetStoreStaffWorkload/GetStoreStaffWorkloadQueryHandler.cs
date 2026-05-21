@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.StoreManagement.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Enums;
 
 namespace OmniRoute.Application.Features.StoreManagement.Queries.GetStoreStaffWorkload;
@@ -33,7 +34,9 @@ internal sealed class GetStoreStaffWorkloadQueryHandler
         var storeId = _currentUserService.StoreId;
 
         if (storeId is null)
+        {
             return Result<List<StoreStaffWorkloadDto>>.Failure("NO_STORE", "Bạn chưa được gán vào đơn vị nào.");
+        }
 
         var staff = await _db.Users
             .AsNoTracking()
@@ -50,11 +53,12 @@ internal sealed class GetStoreStaffWorkloadQueryHandler
             .ToListAsync(ct);
 
         if (staff.Count == 0)
+        {
             return Result<List<StoreStaffWorkloadDto>>.Success([]);
+        }
 
         var staffIds = staff.Select(s => s.UserId).ToList();
 
-        // Count SLA-violated leads per staff member (active leads only)
         var slaViolatedCounts = await _db.Leads
             .AsNoTracking()
             .Where(l => l.AssignedUserId.HasValue &&
@@ -65,7 +69,6 @@ internal sealed class GetStoreStaffWorkloadQueryHandler
             .Select(g => new { UserId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.UserId, x => x.Count, ct);
 
-        // Count completed leads per staff member
         var completedCounts = await _db.Leads
             .AsNoTracking()
             .Where(l => l.AssignedUserId.HasValue &&
@@ -79,6 +82,7 @@ internal sealed class GetStoreStaffWorkloadQueryHandler
             UserId: s.UserId,
             FullName: s.FullName,
             RoleName: s.RoleName,
+            RoleDisplayName: RoleCatalog.GetDisplayName(s.RoleName),
             IsActive: s.IsActive,
             CurrentWorkload: s.CurrentWorkload,
             SlaViolatedCount: slaViolatedCounts.GetValueOrDefault(s.UserId, 0),

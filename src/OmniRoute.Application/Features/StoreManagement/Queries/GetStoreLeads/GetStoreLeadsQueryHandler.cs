@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.StoreManagement.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.StoreManagement.Queries.GetStoreLeads;
 
@@ -26,9 +27,11 @@ internal sealed class GetStoreLeadsQueryHandler
         var storeId = _currentUserService.StoreId;
 
         if (storeId is null)
+        {
             return Result<PagedResult<StoreLeadListItemDto>>.Failure("NO_STORE", "Bạn chưa được gán vào đơn vị nào.");
+        }
 
-        var q = _db.Leads
+        var leadsQuery = _db.Leads
             .AsNoTracking()
             .Where(l => l.AssignedStoreId == storeId)
             .AsQueryable();
@@ -36,33 +39,43 @@ internal sealed class GetStoreLeadsQueryHandler
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            q = q.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
+            leadsQuery = leadsQuery.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Status) &&
             Enum.TryParse<LeadStatus>(query.Status, ignoreCase: true, out var status))
-            q = q.Where(l => l.Status == status);
+        {
+            leadsQuery = leadsQuery.Where(l => l.Status == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(query.PriorityLevel) &&
             Enum.TryParse<PriorityLevel>(query.PriorityLevel, ignoreCase: true, out var priority))
-            q = q.Where(l => l.PriorityLevel == priority);
+        {
+            leadsQuery = leadsQuery.Where(l => l.PriorityLevel == priority);
+        }
 
-        if (!string.IsNullOrWhiteSpace(query.Channel) &&
-            Enum.TryParse<Channel>(query.Channel, ignoreCase: true, out var channel))
-            q = q.Where(l => l.Channel == channel);
+        if (RoutingRuleChannelHelper.TryParseChannel(query.Channel, out var channel))
+        {
+            leadsQuery = leadsQuery.Where(l => l.Channel == channel);
+        }
 
         if (query.AssignedUserId.HasValue)
-            q = q.Where(l => l.AssignedUserId == query.AssignedUserId.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.AssignedUserId == query.AssignedUserId.Value);
+        }
 
         if (query.DateFrom.HasValue)
-            q = q.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        }
 
         if (query.DateTo.HasValue)
-            q = q.Where(l => l.CreatedAt <= query.DateTo.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt <= query.DateTo.Value);
+        }
 
-        var totalCount = await q.CountAsync(ct);
+        var totalCount = await leadsQuery.CountAsync(ct);
 
-        // Build user name lookup for store staff
         var staffIds = await _db.Users
             .Where(u => u.StoreId == storeId)
             .Select(u => u.UserId)
@@ -73,7 +86,7 @@ internal sealed class GetStoreLeadsQueryHandler
             .Select(u => new { u.UserId, FullName = (u.FirstName + " " + u.LastName).Trim() })
             .ToDictionaryAsync(u => u.UserId, u => u.FullName, ct);
 
-        var items = await q
+        var items = await leadsQuery
             .OrderByDescending(l => l.PriorityLevel)
             .ThenBy(l => l.SlaDeadline)
             .Skip((query.Page - 1) * query.PageSize)

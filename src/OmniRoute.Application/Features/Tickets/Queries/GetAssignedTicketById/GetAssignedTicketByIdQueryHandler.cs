@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Tickets.DTOs;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Tickets.Queries.GetAssignedTicketById;
 
@@ -30,7 +31,7 @@ internal sealed class GetAssignedTicketByIdQueryHandler
     {
         var currentUserId = _currentUserService.GetUserId();
 
-        // CS-02: Chỉ lấy ticket đang được gán cho nhân viên CS hiện tại
+        // CS-02: Chỉ lấy ticket đang được gán cho nhân viên CS hiện tại.
         var ticket = await _db.Tickets
             .AsNoTracking()
             .Include(t => t.AssignedUser)
@@ -38,7 +39,9 @@ internal sealed class GetAssignedTicketByIdQueryHandler
             .FirstOrDefaultAsync(ct);
 
         if (ticket is null)
+        {
             return Result<TicketDetailDto>.Failure("NOT_FOUND", "Ticket không tồn tại hoặc chưa được gán cho bạn.");
+        }
 
         string? assignedUserName = null;
         if (ticket.AssignedUser is not null)
@@ -49,8 +52,8 @@ internal sealed class GetAssignedTicketByIdQueryHandler
                 : fullName;
         }
 
-        // Activity timeline (sắp xếp theo thời gian tăng dần)
-        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho CS
+        // Activity timeline theo thứ tự thời gian tăng dần.
+        // IsInternal=true (ghi chú nội bộ của TN/QL) không hiển thị cho CS.
         var activityLogs = await _db.ActivityLogs
             .AsNoTracking()
             .Include(al => al.PerformedByUser)
@@ -64,12 +67,12 @@ internal sealed class GetAssignedTicketByIdQueryHandler
                 al.PerformedAt,
                 al.PerformedByUser == null
                     ? null
-                    : ($"{al.PerformedByUser.FirstName} {al.PerformedByUser.LastName}".Trim() == ""
+                    : ($"{al.PerformedByUser.FirstName} {al.PerformedByUser.LastName}".Trim() == string.Empty
                         ? al.PerformedByUser.Username
                         : $"{al.PerformedByUser.FirstName} {al.PerformedByUser.LastName}".Trim())))
             .ToListAsync(ct);
 
-        // CS-02: Lịch sử ticket trước của cùng số điện thoại
+        // CS-02: Lịch sử ticket trước của cùng số điện thoại.
         var history = await _ticketRepository.GetByCustomerPhoneAsync(ticket.CustomerPhone, ct);
         var customerHistory = history
             .Where(t => t.Id != ticket.Id)
@@ -89,7 +92,8 @@ internal sealed class GetAssignedTicketByIdQueryHandler
             CustomerPhone: ticket.CustomerPhone,
             CustomerAddress: ticket.CustomerAddress,
             CustomerEmail: ticket.CustomerEmail,
-            Channel: ticket.Channel.ToString(),
+            Channel: RoutingRuleChannelHelper.GetCanonicalName(ticket.Channel),
+            ChannelDisplayName: RoutingRuleChannelHelper.GetDisplayName(ticket.Channel),
             NeedDescription: ticket.NeedDescription,
             NeedType: ticket.NeedType?.ToString(),
             PriorityScore: ticket.PriorityScore,

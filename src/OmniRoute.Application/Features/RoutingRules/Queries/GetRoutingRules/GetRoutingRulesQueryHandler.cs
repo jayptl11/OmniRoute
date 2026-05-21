@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.RoutingRules.DTOs;
 using OmniRoute.Domain.Entities;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.RoutingRules.Queries.GetRoutingRules;
 
@@ -26,7 +27,7 @@ internal sealed class GetRoutingRulesQueryHandler : IQueryHandler<GetRoutingRule
         rule.RuleName,
         rule.Description,
         rule.PriorityOrder,
-        Deserialize(rule.ConditionChannelJson),
+        DeserializeChannels(rule.ConditionChannelJson),
         Deserialize(rule.ConditionKeywordsJson),
         rule.ActionGroup.ToString(),
         rule.ActionTeamId,
@@ -34,6 +35,12 @@ internal sealed class GetRoutingRulesQueryHandler : IQueryHandler<GetRoutingRule
         rule.IsActive,
         rule.CreatedAt,
         rule.UpdatedAt);
+
+    private static List<string>? DeserializeChannels(string? json)
+    {
+        var values = Deserialize(json);
+        return RoutingRuleChannelHelper.NormalizeConditionChannels(values);
+    }
 
     private static List<string>? Deserialize(string? json)
         => json is null ? null : JsonSerializer.Deserialize<List<string>>(json);

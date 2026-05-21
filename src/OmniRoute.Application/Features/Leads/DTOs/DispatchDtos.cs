@@ -23,6 +23,7 @@ public record PendingDispatchLeadDetailDto(
     string? CustomerAddress,
     string? CustomerEmail,
     string Channel,
+    string ChannelDisplayName,
     string NeedDescription,
     List<string>? ProductInterest,
     string? NeedType,

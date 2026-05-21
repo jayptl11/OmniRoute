@@ -7,6 +7,19 @@ namespace OmniRoute.Domain.Services;
 
 public static class RoutingRuleChannelHelper
 {
+    private sealed record ChannelDefinition(Channel Channel, string DisplayName, string[] Aliases);
+
+    private static readonly ChannelDefinition[] ChannelDefinitions =
+    [
+        new(Channel.Hotline, nameof(Channel.Hotline), [nameof(Channel.Hotline)]),
+        new(Channel.Walkin, nameof(Channel.Walkin), [nameof(Channel.Walkin), "Walk-in", "Truc tiep tai cua hang"]),
+        new(Channel.Webform, nameof(Channel.Webform), [nameof(Channel.Webform), "Web", "Website", "Bieu mau web"]),
+        new(Channel.Chat, nameof(Channel.Chat), [nameof(Channel.Chat)]),
+        new(Channel.Email, nameof(Channel.Email), [nameof(Channel.Email)]),
+        new(Channel.Zalo, nameof(Channel.Zalo), [nameof(Channel.Zalo)]),
+        new(Channel.Referral, nameof(Channel.Referral), [nameof(Channel.Referral), "Gioi thieu"])
+    ];
+
     private static readonly HashSet<string> WildcardTokens =
     [
         "tatcakenh",
@@ -18,19 +31,10 @@ public static class RoutingRuleChannelHelper
         "anychannels"
     ];
 
-    private static readonly Dictionary<string, Channel> ChannelAliases = new()
-    {
-        [CanonicalizeToken(nameof(Channel.Hotline))] = Channel.Hotline,
-        [CanonicalizeToken(nameof(Channel.Walkin))] = Channel.Walkin,
-        [CanonicalizeToken("Walk-in")] = Channel.Walkin,
-        [CanonicalizeToken(nameof(Channel.Webform))] = Channel.Webform,
-        [CanonicalizeToken("Web")] = Channel.Webform,
-        [CanonicalizeToken(nameof(Channel.Chat))] = Channel.Chat,
-        [CanonicalizeToken(nameof(Channel.Email))] = Channel.Email,
-        [CanonicalizeToken(nameof(Channel.Zalo))] = Channel.Zalo,
-        [CanonicalizeToken(nameof(Channel.Referral))] = Channel.Referral,
-        [CanonicalizeToken("Gioi thieu")] = Channel.Referral
-    };
+    private static readonly Dictionary<string, ChannelDefinition> ChannelDefinitionsByToken = BuildDefinitionsByToken();
+
+    private static readonly Dictionary<Channel, ChannelDefinition> ChannelDefinitionsByValue =
+        ChannelDefinitions.ToDictionary(definition => definition.Channel);
 
     public static List<string>? NormalizeConditionChannels(IEnumerable<string>? channels)
     {
@@ -53,9 +57,9 @@ public static class RoutingRuleChannelHelper
                 return null;
             }
 
-            if (TryNormalizeChannel(channel, out var parsedChannel))
+            if (TryParseChannel(channel, out var parsedChannel))
             {
-                normalized.Add(parsedChannel.ToString());
+                normalized.Add(GetCanonicalName(parsedChannel));
                 continue;
             }
 
@@ -76,7 +80,7 @@ public static class RoutingRuleChannelHelper
         }
 
         return ruleChannels.Any(token =>
-            TryNormalizeChannel(token, out var parsedChannel) &&
+            TryParseChannel(token, out var parsedChannel) &&
             parsedChannel == leadChannel);
     }
 
@@ -93,11 +97,36 @@ public static class RoutingRuleChannelHelper
             return false;
         }
 
-        return TryNormalizeChannel(requestedChannel, out var parsedRequestChannel) &&
+        return TryParseChannel(requestedChannel, out var parsedRequestChannel) &&
                ruleChannels.Any(token =>
-                   TryNormalizeChannel(token, out var parsedRuleChannel) &&
+                   TryParseChannel(token, out var parsedRuleChannel) &&
                    parsedRuleChannel == parsedRequestChannel);
     }
+
+    public static bool TryParseChannel(string? value, out Channel channel)
+    {
+        if (!string.IsNullOrWhiteSpace(value) &&
+            ChannelDefinitionsByToken.TryGetValue(CanonicalizeToken(value), out var definition))
+        {
+            channel = definition.Channel;
+            return true;
+        }
+
+        channel = default;
+        return false;
+    }
+
+    public static string GetCanonicalName(Channel channel)
+        => ChannelDefinitionsByValue[channel].Channel.ToString();
+
+    public static string? NormalizeRequestedChannel(string? requestedChannel)
+        => TryParseChannel(requestedChannel, out var channel) ? GetCanonicalName(channel) : null;
+
+    public static string GetDisplayName(Channel channel)
+        => ChannelDefinitionsByValue[channel].DisplayName;
+
+    public static string? GetDisplayName(string? channel)
+        => TryParseChannel(channel, out var parsedChannel) ? GetDisplayName(parsedChannel) : null;
 
     private static bool IsWildcardRule(IReadOnlyCollection<string> channels)
         => channels.Count == 0 || channels.Any(IsWildcardToken);
@@ -128,17 +157,6 @@ public static class RoutingRuleChannelHelper
         }
 
         return [conditionChannelJson];
-    }
-
-    private static bool TryNormalizeChannel(string value, out Channel channel)
-    {
-        if (ChannelAliases.TryGetValue(CanonicalizeToken(value), out channel))
-        {
-            return true;
-        }
-
-        channel = default;
-        return false;
     }
 
     private static bool IsWildcardToken(string? value)
@@ -175,5 +193,20 @@ public static class RoutingRuleChannelHelper
         }
 
         return builder.ToString().Normalize(NormalizationForm.FormC);
+    }
+
+    private static Dictionary<string, ChannelDefinition> BuildDefinitionsByToken()
+    {
+        var result = new Dictionary<string, ChannelDefinition>(StringComparer.Ordinal);
+
+        foreach (var definition in ChannelDefinitions)
+        {
+            foreach (var alias in definition.Aliases.Append(definition.DisplayName))
+            {
+                result[CanonicalizeToken(alias)] = definition;
+            }
+        }
+
+        return result;
     }
 }

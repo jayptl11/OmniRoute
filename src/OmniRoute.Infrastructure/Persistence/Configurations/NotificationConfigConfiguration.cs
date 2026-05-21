@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
 
 namespace OmniRoute.Infrastructure.Persistence.Configurations;
@@ -18,19 +19,19 @@ internal sealed class NotificationConfigConfiguration : IEntityTypeConfiguration
         builder.HasIndex(x => new { x.NotificationType, x.TargetRole }).IsUnique();
 
         // Seed defaults per spec §11:
-        // NEW_LEAD       → assigned user (handled in code) — also alert TN
-        // SLA_WARNING    → assigned user (in code) + TN
-        // SLA_VIOLATED   → assigned user (in code) + TN + QL
-        // ESCALATED      → TN
-        // REASSIGNED     → new assignee (in code)
-        // FOLLOW_UP_DUE  → assigned user (in code)
+        // NEW_LEAD       -> assigned user (handled in code) + TN
+        // SLA_WARNING    -> assigned user (in code) + TN
+        // SLA_VIOLATED   -> assigned user (in code) + TN + QL
+        // ESCALATED      -> TN
+        // REASSIGNED     -> new assignee (in code)
+        // FOLLOW_UP_DUE  -> assigned user (in code)
         builder.HasData(
-            Build("c1000001-0000-0000-0000-000000000001", "NEW_LEAD",      "TN",  true),
-            Build("c1000002-0000-0000-0000-000000000002", "SLA_WARNING",   "TN",  true),
-            Build("c1000003-0000-0000-0000-000000000003", "SLA_VIOLATED",  "TN",  true),
-            Build("c1000004-0000-0000-0000-000000000004", "SLA_VIOLATED",  "QL",  true),
-            Build("c1000005-0000-0000-0000-000000000005", "ESCALATED",     "TN",  true),
-            Build("c1000006-0000-0000-0000-000000000006", "ESCALATED",     "QL",  true)
+            Build("c1000001-0000-0000-0000-000000000001", "NEW_LEAD", RoleCatalog.TeamLead, true),
+            Build("c1000002-0000-0000-0000-000000000002", "SLA_WARNING", RoleCatalog.TeamLead, true),
+            Build("c1000003-0000-0000-0000-000000000003", "SLA_VIOLATED", RoleCatalog.TeamLead, true),
+            Build("c1000004-0000-0000-0000-000000000004", "SLA_VIOLATED", RoleCatalog.StoreManager, true),
+            Build("c1000005-0000-0000-0000-000000000005", "ESCALATED", RoleCatalog.TeamLead, true),
+            Build("c1000006-0000-0000-0000-000000000006", "ESCALATED", RoleCatalog.StoreManager, true)
         );
     }
 

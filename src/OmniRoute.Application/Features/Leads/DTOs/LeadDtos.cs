@@ -27,6 +27,7 @@ public record LeadListItemDto(
     string CustomerName,
     string CustomerPhone,
     string Channel,
+    string ChannelDisplayName,
     string? NeedType,
     string LeadStatus,
     string? PriorityLevel,
@@ -42,9 +43,10 @@ public record LeadDetailDto(
     string? CustomerAddress,
     string? CustomerEmail,
     string Channel,
+    string ChannelDisplayName,
     string NeedDescription,
     List<string>? ProductInterest,
-    // Kết quả phân loại (SYS-01 → SYS-03)
+    // Kết quả phân loại (SYS-01 -> SYS-03)
     string? NeedType,
     int PriorityScore,
     string? PriorityLevel,
@@ -84,7 +86,7 @@ public record ActivityLogItemDto(
     string? PerformedByName
 );
 
-// SA-01 / SA-03: Danh sách lead được gán cho Sale
+// SA-01 / SA-03: Danh sách lead được gán cho sale
 public record SaleLeadListItemDto(
     Guid LeadId,
     string LeadCode,
@@ -98,7 +100,7 @@ public record SaleLeadListItemDto(
     DateTime? AssignedAt
 );
 
-// SA-02: Chi tiết lead Sale (bao gồm timeline activity)
+// SA-02: Chi tiết lead sale (bao gồm timeline activity)
 public record SaleLeadDetailDto(
     Guid LeadId,
     string LeadCode,
@@ -107,6 +109,7 @@ public record SaleLeadDetailDto(
     string? CustomerAddress,
     string? CustomerEmail,
     string Channel,
+    string ChannelDisplayName,
     string NeedDescription,
     List<string>? ProductInterest,
     string? NeedType,

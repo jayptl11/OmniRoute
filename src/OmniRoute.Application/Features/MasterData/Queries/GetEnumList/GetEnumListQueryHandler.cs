@@ -2,6 +2,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.MasterData.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.MasterData.Queries.GetEnumList;
 
@@ -11,7 +12,10 @@ internal sealed class GetEnumListQueryHandler : IQueryHandler<GetEnumListQuery, 
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["Channel"] = () => Enum.GetValues<Channel>()
-                .Select(v => new EnumListItemDto(v.ToString(), v.ToString())).ToList(),
+                .Select(v => new EnumListItemDto(
+                    RoutingRuleChannelHelper.GetCanonicalName(v),
+                    RoutingRuleChannelHelper.GetDisplayName(v)))
+                .ToList(),
 
             ["NeedType"] = () => Enum.GetValues<NeedType>()
                 .Select(v => new EnumListItemDto(v.ToString(), v.ToString())).ToList(),

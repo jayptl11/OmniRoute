@@ -5,6 +5,7 @@ public record StoreStaffWorkloadDto(
     Guid UserId,
     string FullName,
     string? RoleName,
+    string? RoleDisplayName,
     bool IsActive,
     int CurrentWorkload,
     int SlaViolatedCount,

@@ -374,6 +374,7 @@ FodyWeavers.xsd
 
 # SQL files
 *.sql
+!scripts/seed-demo-data.sql
 
 
 *.md

@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetTeamLeads;
 
@@ -26,15 +27,16 @@ internal sealed class GetTeamLeadsQueryHandler
         var teamId = _currentUserService.TeamId;
 
         if (teamId is null)
+        {
             return Result<PagedResult<TeamLeadListItemDto>>.Failure("NO_TEAM", "Bạn chưa được gán vào đội nào.");
+        }
 
-        // Resolve team member IDs to scope lead query (avoids navigation property translation issues)
         var teamMemberIds = await _db.Users
             .Where(u => u.TeamId == teamId)
             .Select(u => u.UserId)
             .ToListAsync(ct);
 
-        var q = _db.Leads
+        var leadsQuery = _db.Leads
             .AsNoTracking()
             .Where(l => l.AssignedUserId.HasValue && teamMemberIds.Contains(l.AssignedUserId.Value))
             .AsQueryable();
@@ -42,39 +44,49 @@ internal sealed class GetTeamLeadsQueryHandler
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            q = q.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
+            leadsQuery = leadsQuery.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Status) &&
             Enum.TryParse<LeadStatus>(query.Status, ignoreCase: true, out var status))
-            q = q.Where(l => l.Status == status);
+        {
+            leadsQuery = leadsQuery.Where(l => l.Status == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(query.PriorityLevel) &&
             Enum.TryParse<PriorityLevel>(query.PriorityLevel, ignoreCase: true, out var priority))
-            q = q.Where(l => l.PriorityLevel == priority);
+        {
+            leadsQuery = leadsQuery.Where(l => l.PriorityLevel == priority);
+        }
 
-        if (!string.IsNullOrWhiteSpace(query.Channel) &&
-            Enum.TryParse<Channel>(query.Channel, ignoreCase: true, out var channel))
-            q = q.Where(l => l.Channel == channel);
+        if (RoutingRuleChannelHelper.TryParseChannel(query.Channel, out var channel))
+        {
+            leadsQuery = leadsQuery.Where(l => l.Channel == channel);
+        }
 
         if (query.AssignedUserId.HasValue)
-            q = q.Where(l => l.AssignedUserId == query.AssignedUserId.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.AssignedUserId == query.AssignedUserId.Value);
+        }
 
         if (query.DateFrom.HasValue)
-            q = q.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        }
 
         if (query.DateTo.HasValue)
-            q = q.Where(l => l.CreatedAt <= query.DateTo.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt <= query.DateTo.Value);
+        }
 
-        var totalCount = await q.CountAsync(ct);
+        var totalCount = await leadsQuery.CountAsync(ct);
 
-        // Build a lookup for assigned user names
         var userNames = await _db.Users
             .Where(u => teamMemberIds.Contains(u.UserId))
             .Select(u => new { u.UserId, FullName = (u.FirstName + " " + u.LastName).Trim() })
             .ToDictionaryAsync(u => u.UserId, u => u.FullName, ct);
 
-        var items = await q
+        var items = await leadsQuery
             .OrderByDescending(l => l.PriorityLevel)
             .ThenBy(l => l.SlaDeadline)
             .Skip((query.Page - 1) * query.PageSize)

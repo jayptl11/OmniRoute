@@ -13,7 +13,7 @@ public record TicketListItemDto(
     bool SlaViolated,
     DateTime? AssignedAt);
 
-// CS-02: chi tiết ticket (bao gồm activity timeline + lịch sử KH)
+// CS-02: chi tiết ticket (bao gồm activity timeline + lịch sử khách hàng)
 public record TicketDetailDto(
     Guid TicketId,
     string TicketCode,
@@ -22,6 +22,7 @@ public record TicketDetailDto(
     string? CustomerAddress,
     string? CustomerEmail,
     string Channel,
+    string ChannelDisplayName,
     string NeedDescription,
     string? NeedType,
     int PriorityScore,

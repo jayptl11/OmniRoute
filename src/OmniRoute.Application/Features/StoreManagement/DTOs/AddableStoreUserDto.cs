@@ -5,4 +5,5 @@ public record AddableStoreUserDto(
     string FullName,
     string Username,
     string? RoleName,
+    string? RoleDisplayName,
     bool HasStore);

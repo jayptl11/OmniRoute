@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Domain.Enums;
 using OmniRoute.Domain.Interfaces;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.AiApiKeys.Commands.TestLeadClassification;
 
@@ -29,12 +30,18 @@ internal sealed class TestLeadClassificationCommandHandler
     {
         var key = await _repository.GetByIdAsync(command.Id, ct);
         if (key is null)
-            return Result<TestLeadClassificationResult>.Failure("NOT_FOUND",
+        {
+            return Result<TestLeadClassificationResult>.Failure(
+                "NOT_FOUND",
                 $"AI API key '{command.Id}' not found.");
+        }
 
-        if (!Enum.TryParse<Channel>(command.Channel, ignoreCase: true, out var channel))
-            return Result<TestLeadClassificationResult>.Failure("INVALID_CHANNEL",
+        if (!RoutingRuleChannelHelper.TryParseChannel(command.Channel, out var channel))
+        {
+            return Result<TestLeadClassificationResult>.Failure(
+                "INVALID_CHANNEL",
                 $"Channel '{command.Channel}' is not valid. Valid values: {string.Join(", ", Enum.GetNames<Channel>())}");
+        }
 
         var plainKey = _encryption.Decrypt(key.EncryptedKey);
 
@@ -42,8 +49,12 @@ internal sealed class TestLeadClassificationCommandHandler
         try
         {
             var result = await _aiService.ClassifyWithKeyAsync(
-                key.Provider, plainKey, key.ConfigJson,
-                command.NeedDescription, channel.ToString(), ct);
+                key.Provider,
+                plainKey,
+                key.ConfigJson,
+                command.NeedDescription,
+                RoutingRuleChannelHelper.GetCanonicalName(channel),
+                ct);
             sw.Stop();
 
             var assignedGroup = MapNeedTypeToGroup(result.NeedType);

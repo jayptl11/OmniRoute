@@ -9,15 +9,27 @@ public class RoutingRuleChannelHelperTests
     [Fact]
     public void NormalizeConditionChannels_WhenAllChannelsLabelProvided_ReturnsNull()
     {
-        var result = RoutingRuleChannelHelper.NormalizeConditionChannels(["Tất cả kênh"]);
+        var result = RoutingRuleChannelHelper.NormalizeConditionChannels(["all"]);
 
         result.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("Walkin", "Walkin")]
+    [InlineData("Walk-in", "Walkin")]
+    [InlineData("Web", "Webform")]
+    [InlineData("Gioi thieu", "Referral")]
+    public void NormalizeRequestedChannel_WhenAliasProvided_ReturnsCanonicalValue(string input, string expected)
+    {
+        var result = RoutingRuleChannelHelper.NormalizeRequestedChannel(input);
+
+        result.Should().Be(expected);
     }
 
     [Fact]
     public void RuleMatchesLeadChannel_WhenRuleStoresAllChannelsLabel_ReturnsTrue()
     {
-        var result = RoutingRuleChannelHelper.RuleMatchesLeadChannel("[\"Tất cả kênh\"]", Channel.Walkin);
+        var result = RoutingRuleChannelHelper.RuleMatchesLeadChannel("[\"all\"]", Channel.Walkin);
 
         result.Should().BeTrue();
     }
@@ -33,8 +45,8 @@ public class RoutingRuleChannelHelperTests
     [Fact]
     public void RuleMatchesRequestedChannel_WhenRequestIsAllChannels_OnlyWildcardRulesMatch()
     {
-        var wildcardRuleMatch = RoutingRuleChannelHelper.RuleMatchesRequestedChannel("[\"Tất cả kênh\"]", "Tất cả kênh");
-        var specificRuleMatch = RoutingRuleChannelHelper.RuleMatchesRequestedChannel("[\"Walkin\"]", "Tất cả kênh");
+        var wildcardRuleMatch = RoutingRuleChannelHelper.RuleMatchesRequestedChannel("[\"all\"]", "all");
+        var specificRuleMatch = RoutingRuleChannelHelper.RuleMatchesRequestedChannel("[\"Walkin\"]", "all");
 
         wildcardRuleMatch.Should().BeTrue();
         specificRuleMatch.Should().BeFalse();

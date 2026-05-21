@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Stores.DTOs;
+using OmniRoute.Domain.Constants;
 
 namespace OmniRoute.Application.Features.Stores.Queries.SearchStoreManagers;
 
@@ -17,21 +18,21 @@ internal sealed class SearchStoreManagersQueryHandler
         SearchStoreManagersQuery query,
         CancellationToken ct)
     {
-        var q = _db.Users
+        var usersQuery = _db.Users
             .Include(u => u.Role)
             .AsNoTracking()
-            .Where(u => u.IsActive && u.Role != null && u.Role.RoleName == "QL");
+            .Where(u => u.IsActive && u.Role != null && u.Role.RoleName == RoleCatalog.StoreManager);
 
         if (!string.IsNullOrWhiteSpace(query.Q))
         {
             var term = query.Q.Trim().ToLower();
-            q = q.Where(u =>
+            usersQuery = usersQuery.Where(u =>
                 u.Username.ToLower().Contains(term) ||
                 (u.FirstName != null && u.FirstName.ToLower().Contains(term)) ||
                 (u.LastName != null && u.LastName.ToLower().Contains(term)));
         }
 
-        var users = await q
+        var users = await usersQuery
             .OrderBy(u => u.LastName)
             .ThenBy(u => u.FirstName)
             .Take(30)
@@ -45,7 +46,6 @@ internal sealed class SearchStoreManagersQueryHandler
             })
             .ToListAsync(ct);
 
-        // Load store names for users that already have a store
         var storeIds = users
             .Where(u => u.StoreId.HasValue)
             .Select(u => u.StoreId!.Value)

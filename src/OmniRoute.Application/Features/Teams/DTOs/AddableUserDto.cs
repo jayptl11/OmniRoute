@@ -5,4 +5,5 @@ public record AddableUserDto(
     string FullName,
     string Username,
     string? RoleName,
+    string? RoleDisplayName,
     bool HasTeam);

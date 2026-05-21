@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetLeads;
 
@@ -25,7 +26,7 @@ internal sealed class GetLeadsQueryHandler
     {
         var currentUserId = _currentUserService.GetUserId();
 
-        var q = _db.Leads
+        var leadsQuery = _db.Leads
             .AsNoTracking()
             .Where(l => l.CreatedBy == currentUserId)
             .AsQueryable();
@@ -34,47 +35,65 @@ internal sealed class GetLeadsQueryHandler
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            q = q.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
+            leadsQuery = leadsQuery.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
         }
 
         // Lọc theo trạng thái
         if (!string.IsNullOrWhiteSpace(query.Status) &&
             Enum.TryParse<LeadStatus>(query.Status, ignoreCase: true, out var status))
         {
-            q = q.Where(l => l.Status == status);
+            leadsQuery = leadsQuery.Where(l => l.Status == status);
         }
 
         // Lọc theo kênh
-        if (!string.IsNullOrWhiteSpace(query.Channel) &&
-            Enum.TryParse<Channel>(query.Channel, ignoreCase: true, out var channel))
+        if (RoutingRuleChannelHelper.TryParseChannel(query.Channel, out var channel))
         {
-            q = q.Where(l => l.Channel == channel);
+            leadsQuery = leadsQuery.Where(l => l.Channel == channel);
         }
 
         // Lọc theo ngày tạo
         if (query.DateFrom.HasValue)
-            q = q.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt >= query.DateFrom.Value);
+        }
 
         if (query.DateTo.HasValue)
-            q = q.Where(l => l.CreatedAt <= query.DateTo.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.CreatedAt <= query.DateTo.Value);
+        }
 
-        var totalCount = await q.CountAsync(ct);
+        var totalCount = await leadsQuery.CountAsync(ct);
 
-        var items = await q
+        var leads = await leadsQuery
             .OrderByDescending(l => l.CreatedAt)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .Select(l => new LeadListItemDto(
+            .Select(l => new
+            {
                 l.Id,
                 l.LeadCode,
                 l.CustomerName,
                 l.CustomerPhone,
-                l.Channel.ToString(),
-                l.NeedType != null ? l.NeedType.ToString() : null,
-                l.Status.ToString(),
-                l.PriorityLevel != null ? l.PriorityLevel.ToString() : null,
-                l.CreatedAt))
+                l.Channel,
+                l.NeedType,
+                l.Status,
+                l.PriorityLevel,
+                l.CreatedAt
+            })
             .ToListAsync(ct);
+
+        var items = leads.Select(l => new LeadListItemDto(
+            l.Id,
+            l.LeadCode,
+            l.CustomerName,
+            l.CustomerPhone,
+            RoutingRuleChannelHelper.GetCanonicalName(l.Channel),
+            RoutingRuleChannelHelper.GetDisplayName(l.Channel),
+            l.NeedType?.ToString(),
+            l.Status.ToString(),
+            l.PriorityLevel?.ToString(),
+            l.CreatedAt))
+            .ToList();
 
         return Result<PagedResult<LeadListItemDto>>.Success(
             new PagedResult<LeadListItemDto>(items, totalCount, query.Page, query.PageSize));

@@ -1,11 +1,12 @@
-﻿using OmniRoute.Domain.Enums;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
-using MassTransit;
-using Microsoft.EntityFrameworkCore;
+using OmniRoute.Domain.Enums;
 
 namespace OmniRoute.Application.Features.Auth.Commands.VerifyOtp;
 
@@ -44,7 +45,9 @@ internal sealed class VerifyOtpCommandHandler : ICommandHandler<VerifyOtpCommand
         };
 
         if (!response.IsSuccess)
+        {
             return response;
+        }
 
         await _otpCacheService.DeleteOtpDataAsync(request.Email, cancellationToken);
 
@@ -72,10 +75,12 @@ internal sealed class VerifyOtpCommandHandler : ICommandHandler<VerifyOtpCommand
             .AnyAsync(u => u.Email == email || u.Username == username, cancellationToken);
 
         if (existingUser)
+        {
             return Result<VerifyOtpResponse>.Failure("USER_EXISTS", "User already exists");
+        }
 
         var defaultRole = await _context.Roles
-            .FirstOrDefaultAsync(r => r.RoleName.Equals("TV"), cancellationToken);
+            .FirstOrDefaultAsync(r => r.RoleName == RoleCatalog.Consultant, cancellationToken);
 
         var user = User.Create(
             NewId.NextGuid(),
@@ -127,4 +132,3 @@ internal sealed class VerifyOtpCommandHandler : ICommandHandler<VerifyOtpCommand
         ));
     }
 }
-

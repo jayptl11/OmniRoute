@@ -1,10 +1,11 @@
-﻿using OmniRoute.Application.Common.Abstractions;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Auth.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
-using MassTransit;
-using Microsoft.EntityFrameworkCore;
 
 namespace OmniRoute.Application.Features.Auth.Commands.RefreshAccessToken;
 
@@ -22,21 +23,20 @@ internal sealed class RefreshAccessTokenCommandHandler : ICommandHandler<Refresh
     public async Task<Result<LoginResponse>> Handle(RefreshAccessTokenCommand request, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-
         var hashedRequestToken = _tokenService.HashRefreshToken(request.RefreshToken);
 
         var storedToken = await _context.RefreshTokens
             .Include(rt => rt.User)
-                .ThenInclude(u => u.Role)
+            .ThenInclude(u => u.Role)
             .FirstOrDefaultAsync(rt => rt.Token == hashedRequestToken, cancellationToken);
 
         if (storedToken == null)
+        {
             return Result<LoginResponse>.Failure("INVALID_REFRESH_TOKEN", "Invalid refresh token");
+        }
 
         if (storedToken.RevokedAt != null)
         {
-            // Token reuse detected â€” possible token theft
-            // Revoke ALL refresh tokens for this user to kill hacker's session
             var allActiveTokens = await _context.RefreshTokens
                 .Where(rt => rt.UserId == storedToken.UserId && rt.RevokedAt == null)
                 .ToListAsync(cancellationToken);
@@ -49,14 +49,17 @@ internal sealed class RefreshAccessTokenCommandHandler : ICommandHandler<Refresh
             _context.SetAuditUserId(storedToken.UserId);
             await _context.SaveChangesAsync(cancellationToken);
 
-            return Result<LoginResponse>.Failure("TOKEN_REUSE_DETECTED", "Token reuse detected. All sessions have been revoked for security.");
+            return Result<LoginResponse>.Failure(
+                "TOKEN_REUSE_DETECTED",
+                "Token reuse detected. All sessions have been revoked for security.");
         }
 
         if (storedToken.ExpiresAt <= now)
+        {
             return Result<LoginResponse>.Failure("TOKEN_EXPIRED", "Refresh token has expired");
+        }
 
         var user = storedToken.User;
-
         storedToken.RevokedAt = now;
 
         var accessToken = _tokenService.GenerateAccessToken(user);
@@ -82,8 +85,8 @@ internal sealed class RefreshAccessTokenCommandHandler : ICommandHandler<Refresh
             user.Username,
             user.LastLogin,
             user.RoleId,
-            user.Role?.RoleName
+            user.Role?.RoleName,
+            RoleCatalog.GetDisplayName(user.Role?.RoleName)
         ));
     }
 }
-

@@ -3,6 +3,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Stores.DTOs;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Domain.Entities;
 using OmniRoute.Domain.Interfaces;
 
@@ -23,9 +24,10 @@ internal sealed class CreateStoreCommandHandler : ICommandHandler<CreateStoreCom
     {
         var codeExists = await _repository.ExistsByCodeAsync(command.StoreCode, null, ct);
         if (codeExists)
+        {
             return Result<StoreDto>.Failure("CODE_TAKEN", $"Store code '{command.StoreCode}' is already in use.");
+        }
 
-        // Resolve manager by username (optional)
         User? manager = null;
         if (!string.IsNullOrWhiteSpace(command.ManagerUsername))
         {
@@ -34,16 +36,21 @@ internal sealed class CreateStoreCommandHandler : ICommandHandler<CreateStoreCom
                 .FirstOrDefaultAsync(u => u.Username == command.ManagerUsername, ct);
 
             if (manager is null)
-                return Result<StoreDto>.Failure("MANAGER_NOT_FOUND",
-                    $"Không tìm thấy người dùng '{command.ManagerUsername}'.");
+            {
+                return Result<StoreDto>.Failure("MANAGER_NOT_FOUND", $"Không tìm thấy người dùng '{command.ManagerUsername}'.");
+            }
 
-            if (manager.Role?.RoleName != "QL")
-                return Result<StoreDto>.Failure("INVALID_MANAGER_ROLE",
-                    "Chỉ có thể gán người dùng có role QL làm quản lý đơn vị.");
+            if (manager.Role?.RoleName != RoleCatalog.StoreManager)
+            {
+                return Result<StoreDto>.Failure(
+                    "INVALID_MANAGER_ROLE",
+                    $"Chỉ có thể gán người dùng có role {RoleCatalog.StoreManager} làm quản lý đơn vị.");
+            }
 
             if (!manager.IsActive)
-                return Result<StoreDto>.Failure("MANAGER_INACTIVE",
-                    "Người dùng đã bị khóa, không thể gán làm quản lý đơn vị.");
+            {
+                return Result<StoreDto>.Failure("MANAGER_INACTIVE", "Người dùng đã bị khóa, không thể gán làm quản lý đơn vị.");
+            }
         }
 
         var store = Store.Create(
@@ -56,9 +63,10 @@ internal sealed class CreateStoreCommandHandler : ICommandHandler<CreateStoreCom
 
         await _repository.AddAsync(store, ct);
 
-        // Assign store to manager user (bidirectional)
         if (manager is not null)
+        {
             manager.AssignToStore(store.Id);
+        }
 
         await _db.SaveChangesAsync(ct);
 
@@ -70,4 +78,3 @@ internal sealed class CreateStoreCommandHandler : ICommandHandler<CreateStoreCom
             store.MaxCapacity, store.IsActive, store.CreatedAt));
     }
 }
-

@@ -1,8 +1,10 @@
-﻿using OmniRoute.API.Middleware;
+using Microsoft.OpenApi.Models;
+using OmniRoute.API.Middleware;
+using OmniRoute.API.Serialization;
 using OmniRoute.Application;
+using OmniRoute.Domain.Constants;
 using OmniRoute.Infrastructure;
 using OmniRoute.Infrastructure.Hubs;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,16 +15,20 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("CanCreateLead",      p => p.RequireRole("TV"));
-    options.AddPolicy("CanProcessLead",     p => p.RequireRole("SA", "SS"));
-    options.AddPolicy("CanProcessTicket",   p => p.RequireRole("CS"));
-    options.AddPolicy("CanDispatchToStore", p => p.RequireRole("DP"));
-    options.AddPolicy("CanReassign",        p => p.RequireRole("TN", "QL"));
-    options.AddPolicy("CanEscalate",        p => p.RequireRole("TN", "CS"));
-    options.AddPolicy("CanManageTeam",      p => p.RequireRole("TN"));
-    options.AddPolicy("CanManageStore",     p => p.RequireRole("QL"));
-    options.AddPolicy("CanAdminSystem",     p => p.RequireRole("QT"));
-    options.AddPolicy("CanViewDashboard",   p => p.RequireRole("BQL", "QT", "TN", "QL"));
+    options.AddPolicy("CanCreateLead", p => p.RequireRole(RoleCatalog.Consultant));
+    options.AddPolicy("CanProcessLead", p => p.RequireRole(RoleCatalog.Sales, RoleCatalog.StoreSales));
+    options.AddPolicy("CanProcessTicket", p => p.RequireRole(RoleCatalog.CustomerService));
+    options.AddPolicy("CanDispatchToStore", p => p.RequireRole(RoleCatalog.Dispatcher));
+    options.AddPolicy("CanReassign", p => p.RequireRole(RoleCatalog.TeamLead, RoleCatalog.StoreManager));
+    options.AddPolicy("CanEscalate", p => p.RequireRole(RoleCatalog.TeamLead, RoleCatalog.CustomerService));
+    options.AddPolicy("CanManageTeam", p => p.RequireRole(RoleCatalog.TeamLead));
+    options.AddPolicy("CanManageStore", p => p.RequireRole(RoleCatalog.StoreManager));
+    options.AddPolicy("CanAdminSystem", p => p.RequireRole(RoleCatalog.SystemAdmin));
+    options.AddPolicy("CanViewDashboard", p => p.RequireRole(
+        RoleCatalog.BoardManagement,
+        RoleCatalog.SystemAdmin,
+        RoleCatalog.TeamLead,
+        RoleCatalog.StoreManager));
 });
 
 var allowedOrigins = builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
@@ -31,15 +37,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
     options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
 
@@ -48,6 +54,7 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        options.JsonSerializerOptions.Converters.Add(new CanonicalChannelJsonConverter());
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });

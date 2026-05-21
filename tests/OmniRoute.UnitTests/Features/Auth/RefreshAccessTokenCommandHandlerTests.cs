@@ -56,7 +56,7 @@ public class RefreshAccessTokenCommandHandlerTests
             RevokedAt = DateTime.Now.AddMinutes(-5)
         };
 
-        // This is the token the hacker got â€” should be revoked by reuse detection
+        // This is the token the hacker got; it should be revoked by reuse detection.
         var activeToken = new RefreshToken
         {
             TokenId = Guid.NewGuid(),

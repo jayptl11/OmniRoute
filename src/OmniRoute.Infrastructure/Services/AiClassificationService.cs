@@ -39,7 +39,7 @@ internal sealed class AiClassificationService : IAiClassificationService
 
     /// <summary>
     /// Classifies the lead need using active API keys ordered by priority.
-    /// Returns null only when all keys fail â€” caller should fall through to rule-based fallback.
+    /// Returns null only when all keys fail; caller should fall through to rule-based fallback.
     /// </summary>
     public async Task<AiClassificationResult?> ClassifyAsync(
         string needDescription,

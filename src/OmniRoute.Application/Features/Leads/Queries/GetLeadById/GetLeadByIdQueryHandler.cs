@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Abstractions;
 using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetLeadById;
 
@@ -32,7 +33,9 @@ internal sealed class GetLeadByIdQueryHandler
             .FirstOrDefaultAsync(ct);
 
         if (lead is null)
+        {
             return Result<LeadDetailDto>.Failure("NOT_FOUND", "Lead không tồn tại hoặc bạn không có quyền xem.");
+        }
 
         List<string>? productInterest = null;
         if (!string.IsNullOrEmpty(lead.ProductInterest))
@@ -57,7 +60,8 @@ internal sealed class GetLeadByIdQueryHandler
             CustomerPhone: lead.CustomerPhone,
             CustomerAddress: lead.CustomerAddress,
             CustomerEmail: lead.CustomerEmail,
-            Channel: lead.Channel.ToString(),
+            Channel: RoutingRuleChannelHelper.GetCanonicalName(lead.Channel),
+            ChannelDisplayName: RoutingRuleChannelHelper.GetDisplayName(lead.Channel),
             NeedDescription: lead.NeedDescription,
             ProductInterest: productInterest,
             NeedType: lead.NeedType?.ToString(),

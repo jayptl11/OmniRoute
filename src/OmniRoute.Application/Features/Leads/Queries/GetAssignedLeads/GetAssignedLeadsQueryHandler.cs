@@ -4,6 +4,7 @@ using OmniRoute.Application.Common.Interfaces;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Domain.Enums;
+using OmniRoute.Domain.Services;
 
 namespace OmniRoute.Application.Features.Leads.Queries.GetAssignedLeads;
 
@@ -25,7 +26,7 @@ internal sealed class GetAssignedLeadsQueryHandler
     {
         var currentUserId = _currentUserService.GetUserId();
 
-        var q = _db.Leads
+        var leadsQuery = _db.Leads
             .AsNoTracking()
             .Where(l => l.AssignedUserId == currentUserId)
             .AsQueryable();
@@ -34,57 +35,76 @@ internal sealed class GetAssignedLeadsQueryHandler
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var search = query.Search.Trim();
-            q = q.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
+            leadsQuery = leadsQuery.Where(l => l.CustomerPhone == search || l.CustomerName.Contains(search));
         }
 
         // Lọc theo trạng thái
         if (!string.IsNullOrWhiteSpace(query.Status) &&
             Enum.TryParse<LeadStatus>(query.Status, ignoreCase: true, out var status))
         {
-            q = q.Where(l => l.Status == status);
+            leadsQuery = leadsQuery.Where(l => l.Status == status);
         }
 
         // Lọc theo mức ưu tiên
         if (!string.IsNullOrWhiteSpace(query.PriorityLevel) &&
             Enum.TryParse<PriorityLevel>(query.PriorityLevel, ignoreCase: true, out var priority))
         {
-            q = q.Where(l => l.PriorityLevel == priority);
+            leadsQuery = leadsQuery.Where(l => l.PriorityLevel == priority);
         }
 
         // Lọc theo kênh
-        if (!string.IsNullOrWhiteSpace(query.Channel) &&
-            Enum.TryParse<Channel>(query.Channel, ignoreCase: true, out var channel))
+        if (RoutingRuleChannelHelper.TryParseChannel(query.Channel, out var channel))
         {
-            q = q.Where(l => l.Channel == channel);
+            leadsQuery = leadsQuery.Where(l => l.Channel == channel);
         }
 
         // Lọc theo ngày được gán
         if (query.DateFrom.HasValue)
-            q = q.Where(l => l.AssignedAt >= query.DateFrom.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.AssignedAt >= query.DateFrom.Value);
+        }
 
         if (query.DateTo.HasValue)
-            q = q.Where(l => l.AssignedAt <= query.DateTo.Value);
+        {
+            leadsQuery = leadsQuery.Where(l => l.AssignedAt <= query.DateTo.Value);
+        }
 
-        var totalCount = await q.CountAsync(ct);
+        var totalCount = await leadsQuery.CountAsync(ct);
 
-        // SA-01: Sắp xếp priority DESC (High → Medium → Low), sau đó SlaDeadline ASC (sắp hết hạn trước)
-        var items = await q
+        // SA-01: Sắp xếp priority DESC (High -> Medium -> Low), sau đó SlaDeadline ASC.
+        var leads = await leadsQuery
             .OrderByDescending(l => l.PriorityLevel)
             .ThenBy(l => l.SlaDeadline)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
+            .Select(l => new
+            {
+                l.Id,
+                l.LeadCode,
+                l.CustomerName,
+                l.CustomerPhone,
+                l.NeedType,
+                l.Status,
+                l.PriorityLevel,
+                l.SlaDeadline,
+                l.SlaViolated,
+                l.AssignedAt
+            })
+            .ToListAsync(ct);
+
+        var items = leads
             .Select(l => new SaleLeadListItemDto(
                 l.Id,
                 l.LeadCode,
                 l.CustomerName,
                 l.CustomerPhone,
-                l.NeedType != null ? l.NeedType.ToString() : null,
+                l.NeedType?.ToString(),
                 l.Status.ToString(),
-                l.PriorityLevel != null ? l.PriorityLevel.ToString() : null,
+                l.PriorityLevel?.ToString(),
                 l.SlaDeadline,
                 l.SlaViolated,
                 l.AssignedAt))
-            .ToListAsync(ct);
+            .ToList();
 
         return Result<PagedResult<SaleLeadListItemDto>>.Success(
             new PagedResult<SaleLeadListItemDto>(items, totalCount, query.Page, query.PageSize));
