@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.Commands.AddInternalNote;
+using OmniRoute.Application.Common.DTOs;
 using OmniRoute.Application.Features.StoreManagement.Commands.ReassignLeadInStore;
 using OmniRoute.Application.Features.StoreManagement.DTOs;
+using OmniRoute.Application.Features.StoreManagement.Queries.GetStoreReassignTargets;
 using OmniRoute.Application.Features.StoreManagement.Queries.GetStoreLeadHistory;
 using OmniRoute.Application.Features.StoreManagement.Queries.GetStoreLeads;
 using OmniRoute.Application.Features.StoreManagement.Queries.GetStoreReport;
+using OmniRoute.Application.Features.StoreManagement.Queries.SearchStoreLeadHistoryActors;
 
 namespace OmniRoute.API.Controllers;
 
@@ -67,6 +70,18 @@ public sealed class StoreLeadsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>QL-03 helper — Dropdown chọn người nhận reassign trong cùng đơn vị.</summary>
+    [HttpGet("{leadId:guid}/reassign-targets")]
+    [ProducesResponseType(typeof(List<UserPickerOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetReassignTargets(Guid leadId, [FromQuery] string? q, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetStoreReassignTargetsQuery(leadId, q), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        return Ok(result.Value);
+    }
+
     /// <summary>
     /// QL-05 — Xem lịch sử xử lý lead theo nhân sự (audit trail).
     /// Lọc tùy chọn: userId, dateFrom, dateTo.
@@ -83,6 +98,18 @@ public sealed class StoreLeadsController : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _sender.Send(new GetStoreLeadHistoryQuery(userId, dateFrom, dateTo, page, pageSize), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        return Ok(result.Value);
+    }
+
+    /// <summary>QL-05 helper — Tìm người đã xuất hiện trong lịch sử xử lý lead của đơn vị.</summary>
+    [HttpGet("history-actors/search")]
+    [ProducesResponseType(typeof(List<UserPickerOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SearchHistoryActors([FromQuery] string? q, CancellationToken ct)
+    {
+        var result = await _sender.Send(new SearchStoreLeadHistoryActorsQuery(q), ct);
         if (!result.IsSuccess)
             return BadRequest(new { result.ErrorCode, result.ErrorMessage });
         return Ok(result.Value);

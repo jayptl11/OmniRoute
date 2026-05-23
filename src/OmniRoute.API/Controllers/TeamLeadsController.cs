@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OmniRoute.Application.Common.DTOs;
 using OmniRoute.Application.Common.Models;
 using OmniRoute.Application.Features.Leads.Commands.EscalateLead;
 using OmniRoute.Application.Features.Leads.Commands.AddInternalNote;
@@ -8,6 +9,7 @@ using OmniRoute.Application.Features.Leads.Commands.ReassignLead;
 using OmniRoute.Application.Features.Leads.DTOs;
 using OmniRoute.Application.Features.Leads.Queries.GetEscalateHistory;
 using OmniRoute.Application.Features.Leads.Queries.GetEscalateTargets;
+using OmniRoute.Application.Features.Leads.Queries.GetTeamReassignTargets;
 using OmniRoute.Application.Features.Leads.Queries.GetSlaViolations;
 using OmniRoute.Application.Features.Leads.Queries.GetTeamLeadOverview;
 using OmniRoute.Application.Features.Leads.Queries.GetTeamLeads;
@@ -94,6 +96,18 @@ public sealed class TeamLeadsController : ControllerBase
             return BadRequest(new { result.ErrorCode, result.ErrorMessage });
         }
         return NoContent();
+    }
+
+    /// <summary>TN-04 helper — Dropdown chọn người nhận reassign trong cùng đội.</summary>
+    [HttpGet("{leadId:guid}/reassign-targets")]
+    [ProducesResponseType(typeof(List<UserPickerOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetReassignTargets(Guid leadId, [FromQuery] string? q, CancellationToken ct)
+    {
+        var result = await _sender.Send(new GetTeamReassignTargetsQuery(leadId, q), ct);
+        if (!result.IsSuccess)
+            return BadRequest(new { result.ErrorCode, result.ErrorMessage });
+        return Ok(result.Value);
     }
 
     /// <summary>TN-05 — Escalate lead ra ngoài đội (đến TN/QL/QT khác).</summary>
