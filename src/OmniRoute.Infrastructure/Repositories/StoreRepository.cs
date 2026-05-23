@@ -51,6 +51,7 @@ internal sealed class StoreRepository : IStoreRepository
 
     // DP-03: Danh sách tất cả cửa hàng kèm số lead đang active
     public async Task<List<(Store Store, int ActiveLeads)>> GetStoresWithActiveLeadCountAsync(
+        string? search = null,
         CancellationToken ct = default)
     {
         var activeStatuses = new[]
@@ -60,7 +61,19 @@ internal sealed class StoreRepository : IStoreRepository
             LeadStatus.InProgress
         };
 
-        var stores = await _context.Stores
+        var storesQuery = _context.Stores.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            storesQuery = storesQuery.Where(s =>
+                s.StoreName.Contains(term) ||
+                s.StoreCode.Contains(term) ||
+                (s.Region != null && s.Region.Contains(term)) ||
+                (s.Address != null && s.Address.Contains(term)));
+        }
+
+        var stores = await storesQuery
             .OrderBy(s => s.StoreName)
             .ToListAsync(ct);
 

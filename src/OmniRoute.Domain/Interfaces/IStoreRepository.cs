@@ -12,5 +12,5 @@ public interface IStoreRepository
     Task UpdateAsync(Store store, CancellationToken ct = default);
 
     // DP-03: Tình trạng từng cửa hàng (kèm số lead đang active)
-    Task<List<(Store Store, int ActiveLeads)>> GetStoresWithActiveLeadCountAsync(CancellationToken ct = default);
+    Task<List<(Store Store, int ActiveLeads)>> GetStoresWithActiveLeadCountAsync(string? search = null, CancellationToken ct = default);
 }

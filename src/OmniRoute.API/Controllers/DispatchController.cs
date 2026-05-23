@@ -69,9 +69,9 @@ public sealed class DispatchController : ControllerBase
     /// </summary>
     [HttpGet("stores/capacity")]
     [ProducesResponseType(typeof(List<StoreCapacityDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetStoresCapacity(CancellationToken ct)
+    public async Task<IActionResult> GetStoresCapacity([FromQuery] string? q, CancellationToken ct)
     {
-        var result = await _sender.Send(new GetStoresCapacityQuery(), ct);
+        var result = await _sender.Send(new GetStoresCapacityQuery(q), ct);
         return result.IsSuccess ? Ok(result.Value) : BadRequest(new { result.ErrorCode, result.ErrorMessage });
     }
 

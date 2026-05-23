@@ -17,7 +17,7 @@ internal sealed class GetStoresCapacityQueryHandler
         GetStoresCapacityQuery query,
         CancellationToken ct)
     {
-        var storesWithCount = await _storeRepository.GetStoresWithActiveLeadCountAsync(ct);
+        var storesWithCount = await _storeRepository.GetStoresWithActiveLeadCountAsync(query.Q, ct);
 
         var result = storesWithCount
             .Select(x =>
