@@ -368,7 +368,9 @@ FodyWeavers.xsd
 # Local development settings and agent config
 **/appsettings.Development.json
 .claude/
+scripts/
 scripts/__pycache__/
+src/OmniRoute.Infrastructure/Persistence/Scripts/
 
 # Copilot instructions (local only)
 .github/copilot-instructions.md
