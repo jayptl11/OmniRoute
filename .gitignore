@@ -365,16 +365,13 @@ FodyWeavers.xsd
 # Kiro specs (internal development documents)
 .kiro/specs/
 
-# Local development settings (contains secrets)
+# Local development settings and agent config
 **/appsettings.Development.json
-
+.claude/
+scripts/__pycache__/
 
 # Copilot instructions (local only)
 .github/copilot-instructions.md
 
-# SQL files
-*.sql
-!scripts/seed-demo-data.sql
-
-
-*.md
+# Local scratch SQL
+scripts/insert_stores.sql
